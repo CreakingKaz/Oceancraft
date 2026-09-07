@@ -1,0 +1,27 @@
+/* Estilos de Slots e Inventario */
+.hotbar-slot {
+    width: 60px; height: 60px;
+    background: rgba(34, 34, 34, var(--ui-opacity));
+    border: 3px solid var(--menu-border);
+    border-radius: 8px; cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+    position: relative; font-size: 24px; color: white;
+}
+.hotbar-slot.selected {
+    border-color: #f1c40f;
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.8);
+}
+.qty-badge {
+    position: absolute; bottom: 2px; right: 5px;
+    font-size: 12px; font-weight: bold; text-shadow: 1px 1px 0 #000;
+}
+.durability-bar {
+    position: absolute; bottom: 0; left: 0;
+    height: 5px; background: #2ecc71; border-radius: 0 0 5px 5px;
+}
+.inv-item {
+    height: 60px; background: #333; border: 2px solid #555;
+    border-radius: 5px; display: flex; justify-content: center; align-items: center;
+    font-size: 24px; color: white; cursor: pointer; position: relative;
+}
+.inv-item:active { transform: scale(0.9); }
