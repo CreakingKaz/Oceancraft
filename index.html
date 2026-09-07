@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-
     <!-- MENÚ DE INICIO -->
     <div id="main-menu" class="ui-layer">
         <h1 class="ocean-title">Oceancraft</h1>
@@ -15,22 +14,17 @@
             <h3>Nueva Partida</h3>
             <input type="text" id="player-icon" class="input-field" placeholder="Tu icono (Ej: Kaz)" maxlength="3">
             <input type="color" id="player-color" class="color-picker" value="#e74c3c">
-            
             <select id="diff-select" class="input-field" style="margin-top:5px;">
                 <option value="0.5">Fácil</option>
                 <option value="1" selected>Normal</option>
                 <option value="1.5">Difícil</option>
             </select>
-            
             <div style="display: flex; gap: 5px; margin-top: 10px;">
                 <button class="btn" onclick="startGame(1, true)">Crear Slot 1</button>
-                <button class="btn" onclick="startGame(2, true)">Crear Slot 2</button>
             </div>
-            
             <h3 style="margin-top: 15px;">Continuar</h3>
             <div style="display: flex; gap: 5px;">
                 <button class="btn" style="background:#0984e3;" onclick="startGame(1, false)">Cargar Slot 1</button>
-                <button class="btn" style="background:#0984e3;" onclick="startGame(2, false)">Cargar Slot 2</button>
             </div>
         </div>
     </div>
@@ -41,34 +35,33 @@
         <!-- Stats Top Left -->
         <div id="stats-hud" class="hud-box">
             <div id="ui-clock" style="color: #f1c40f; font-weight: bold; border-bottom: 1px solid #555; margin-bottom: 5px;">Día 1 - 08:00</div>
-            <div><span style="color:#e74c3c">♥</span> Hambre: <span id="ui-hp">100</span>%</div>
+            <div><span style="color:#2ecc71">✚</span> Vida: <span id="ui-hp">100</span>%</div>
+            <div><span style="color:#e74c3c">♥</span> Hambre: <span id="ui-food">100</span>%</div>
             <div><span style="color:#3498db">▤</span> Sed: <span id="ui-thirst">100</span>%</div>
             <div><span style="color:#f1c40f">☀</span> Sueño: <span id="ui-sleep">100</span>%</div>
         </div>
 
-        <!-- Botones Laterales Derechos (Menús) -->
         <div id="side-menus">
             <button class="btn-icon" onclick="toggleMenu('inventory-modal')">🎒</button>
             <button class="btn-icon" onclick="toggleMenu('craft-modal')">⚒</button>
             <button class="btn-icon" onclick="toggleMenu('settings-modal')">⚙</button>
         </div>
 
-        <!-- Controles Inferiores (Zoom, Hotbar y Acción) -->
+        <!-- Controles Inferiores -->
         <div id="bottom-controls">
-            <!-- Zoom centrado encima de la hotbar -->
-            <div id="zoom-controls">
-                <button class="btn-small" onclick="zoomIn()">Zoom +</button>
-                <button class="btn-small" onclick="zoomOut()">Zoom -</button>
+            <!-- Zoom Slider en el centro -->
+            <div id="zoom-container">
+                <label style="color:white; font-size:12px; font-weight:bold; text-shadow:1px 1px 0 #000;">Zoom:</label>
+                <input type="range" id="zoom-slider" min="0.5" max="3" step="0.1" value="1.5" onchange="updateZoom()">
             </div>
             
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
                 <div class="hotbar-slot selected" id="slot-0" onclick="selectSlot(0)"></div>
                 <div class="hotbar-slot" id="slot-1" onclick="selectSlot(1)"></div>
                 <div class="hotbar-slot" id="slot-2" onclick="selectSlot(2)"></div>
                 <button class="btn" id="action-btn" onclick="doAction()" style="padding: 15px; font-size: 16px;">Buscar</button>
             </div>
         </div>
-        
         <div id="notifications"></div>
     </div>
 
@@ -109,7 +102,7 @@
         </div>
     </div>
 
-    <!-- MODAL AJUSTES (Aquí va la transparencia y guardado) -->
+    <!-- MODAL AJUSTES -->
     <div id="settings-modal" class="modal hidden">
         <div class="modal-header">
             <h2>Opciones</h2>
@@ -128,7 +121,8 @@
     <canvas id="gameCanvas"></canvas>
 
     <script src="js/items.js"></script>
-    <script src="js/ui.js"></script>
+    <script src="js/combat.js"></script>
     <script src="js/engine.js"></script>
 </body>
 </html>
+
