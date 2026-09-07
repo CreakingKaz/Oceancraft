@@ -10,7 +10,7 @@ const ITEMS_DB = {
     'hojas': { name: 'Hojas', cat: 'mat', color: '#2ecc71', symbol: '▤', desc: 'Hojas de palma para hacer cuerdas.' },
     
     'gancho_t1': { name: 'Gancho Plástico', cat: 'herr', color: '#7f8c8d', symbol: '⚒', dur: 10, maxDur: 10, desc: 'Atrapa objetos cercanos.', action: 'Lanzar Gancho' },
-    'martillo': { name: 'Martillo', cat: 'herr', color: '#e67e22', symbol: '⚒', dur: 30, maxDur: 30, desc: 'Sirve para colocar y quitar estructuras.', action: 'Modo Construir' },
+    'martillo': { name: 'Martillo', cat: 'herr', color: '#e67e22', symbol: '⚒', dur: 30, maxDur: 30, desc: 'Sirve para colocar y quitar estructuras.' },
     
     'papa': { name: 'Papa Cruda', cat: 'com', color: '#e1b12c', symbol: '♨', desc: 'Comida básica de barril.', val: {h: 15, s: 2} }
 };
