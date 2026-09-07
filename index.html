@@ -4,115 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Oceancraft</title>
-    <link rel="stylesheet" href="css/styles.css?v=raft-core-2">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="theme-dark">
-    <canvas id="gameCanvas" aria-label="Océano y balsa"></canvas>
+<body>
 
-    <main id="main-menu" class="screen">
-        <h1>Oceancraft</h1>
-        <p class="menu-subtitle">Sobrevive, recoge y crea en alta mar.</p>
-        <section class="menu-box">
-            <label for="player-icon">Identificador del jugador</label>
-            <input type="text" id="player-icon" class="input-field" placeholder="Kaz o ☁️" maxlength="3">
-            <label for="player-color">Color del jugador</label>
+    <!-- MENÚ DE INICIO -->
+    <div id="main-menu" class="ui-layer">
+        <h1 class="ocean-title">Oceancraft</h1>
+        <div class="menu-box">
+            <h3>Nueva Partida</h3>
+            <input type="text" id="player-icon" class="input-field" placeholder="Tu icono (Ej: Kaz)" maxlength="3">
             <input type="color" id="player-color" class="color-picker" value="#e74c3c">
-            <button class="btn btn-primary" onclick="startGame(true)">Nueva aventura</button>
-            <button class="btn" id="continue-btn" onclick="continueGame()">Continuar partida</button>
-            <p id="menu-message" class="menu-message" aria-live="polite"></p>
-        </section>
-    </main>
-
-    <section id="game-ui" class="hidden" aria-label="Interfaz de juego">
-        <header id="top-hud">
-            <button class="icon-btn" onclick="toggleMenu('settings-modal')" aria-label="Abrir ajustes">☰</button>
-            <div id="stats-panel" class="hud-panel">
-                <div id="ui-clock" class="clock">Día 1 · 08:00</div>
-                <div class="stat-line"><span class="stat-name stat-food">♥ Comida</span><span id="stat-hunger">100%</span><div class="stat-track"><div id="bar-hunger" class="stat-fill food-fill"></div></div></div>
-                <div class="stat-line"><span class="stat-name stat-water">▤ Agua</span><span id="stat-thirst">100%</span><div class="stat-track"><div id="bar-thirst" class="stat-fill water-fill"></div></div></div>
-                <div class="stat-line"><span class="stat-name stat-energy">☀ Energía</span><span id="stat-energy">100%</span><div class="stat-track"><div id="bar-energy" class="stat-fill energy-fill"></div></div></div>
+            
+            <select id="diff-select" class="input-field" style="margin-top:5px;">
+                <option value="0.5">Fácil</option>
+                <option value="1" selected>Normal</option>
+                <option value="1.5">Difícil</option>
+            </select>
+            
+            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                <button class="btn" onclick="startGame(1, true)">Crear Slot 1</button>
+                <button class="btn" onclick="startGame(2, true)">Crear Slot 2</button>
             </div>
-            <aside id="history-log" class="hud-panel" aria-label="Historial de acciones"></aside>
-        </header>
-
-        <div id="notifications" aria-live="polite"></div>
-
-        <footer id="bottom-hud">
-            <div id="hotbar" aria-label="Accesos rápidos">
-                <button class="hotbar-slot selected" id="slot-0" onclick="selectSlot(0)" aria-label="Espacio rápido 1"></button>
-                <button class="hotbar-slot" id="slot-1" onclick="selectSlot(1)" aria-label="Espacio rápido 2"></button>
-                <button class="hotbar-slot" id="slot-2" onclick="selectSlot(2)" aria-label="Espacio rápido 3"></button>
+            
+            <h3 style="margin-top: 15px;">Continuar</h3>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn" style="background:#0984e3;" onclick="startGame(1, false)">Cargar Slot 1</button>
+                <button class="btn" style="background:#0984e3;" onclick="startGame(2, false)">Cargar Slot 2</button>
             </div>
-            <div id="main-actions">
-                <button class="btn side-action" onclick="sleepAction()">Dormir</button>
-                <button class="btn side-action" onclick="toggleMenu('inventory-modal')">Inventario</button>
-                <button class="btn side-action" onclick="toggleMenu('craft-modal')">Crafteo</button>
-                <button class="btn action-btn" id="action-btn" onclick="doPrimaryAction()">Buscar objetos</button>
-            </div>
-        </footer>
-    </section>
-
-    <section id="inventory-modal" class="modal hidden" role="dialog" aria-label="Inventario">
-        <header class="modal-header">
-            <h2>Inventario <span id="inv-count">0</span>/30</h2>
-            <button class="icon-btn" onclick="toggleMenu('inventory-modal')" aria-label="Cerrar inventario">×</button>
-        </header>
-        <nav class="tabs" id="inv-tabs">
-            <button class="tab active" data-category="todo" onclick="setInvTab('todo')">Todo</button>
-            <button class="tab" data-category="mat" onclick="setInvTab('mat')">Recursos</button>
-            <button class="tab" data-category="herr" onclick="setInvTab('herr')">Herramientas</button>
-            <button class="tab" data-category="com" onclick="setInvTab('com')">Comida</button>
-        </nav>
-        <label class="filter-row">Ordenar <select id="inv-filter" onchange="renderInventory()"><option value="new">Más recientes</option><option value="qty">Cantidad</option></select></label>
-        <div id="inv-grid" class="item-list"></div>
-        <footer class="lore-box">
-            <p id="lore-text">Selecciona un objeto para ver su información.</p>
-            <div id="lore-actions" class="lore-actions"></div>
-        </footer>
-    </section>
-
-    <section id="craft-modal" class="modal hidden" role="dialog" aria-label="Crafteo">
-        <header class="modal-header">
-            <h2>Crafteo</h2>
-            <button class="icon-btn" onclick="toggleMenu('craft-modal')" aria-label="Cerrar crafteo">×</button>
-        </header>
-        <nav class="tabs" id="craft-tabs">
-            <button class="tab active" data-category="todo" onclick="setCraftTab('todo')">Todo</button>
-            <button class="tab" data-category="mat" onclick="setCraftTab('mat')">Recursos</button>
-            <button class="tab" data-category="herr" onclick="setCraftTab('herr')">Herramientas</button>
-            <button class="tab" data-category="com" onclick="setCraftTab('com')">Comida</button>
-        </nav>
-        <label class="filter-row"><input type="checkbox" id="show-all-craft" checked onchange="renderCraftMenu()"> Mostrar recetas bloqueadas</label>
-        <div id="craft-list" class="item-list"></div>
-        <footer class="lore-box">
-            <p id="craft-lore-text">Selecciona una receta para ver los materiales necesarios.</p>
-            <div id="craft-actions" class="lore-actions"></div>
-        </footer>
-    </section>
-
-    <section id="settings-modal" class="modal small-modal hidden" role="dialog" aria-label="Ajustes">
-        <header class="modal-header">
-            <h2>Menú</h2>
-            <button class="icon-btn" onclick="toggleMenu('settings-modal')" aria-label="Cerrar menú">×</button>
-        </header>
-        <nav class="tabs">
-            <button class="tab active">Juego</button>
-            <button class="tab">Interfaz</button>
-        </nav>
-        <div class="settings-content">
-            <p>Estadísticas</p>
-            <div class="setting-buttons"><button class="btn" onclick="setStatFormat('bar')">Barras</button><button class="btn" onclick="setStatFormat('percent')">Porcentajes</button></div>
-            <p>Estilo visual</p>
-            <div class="setting-buttons"><button class="btn" onclick="setVisualMode('auto')">Automático</button><button class="btn" onclick="setVisualMode('day')">Día eterno</button><button class="btn" onclick="setVisualMode('night')">Noche eterna</button></div>
-            <p>Temas de los menús</p>
-            <div class="setting-buttons"><button class="btn" onclick="setTheme('dark')">Oscuro</button><button class="btn" onclick="setTheme('light')">Claro</button><button class="btn" onclick="setTheme('ocean')">Océano</button></div>
-            <label class="opacity-setting">Opacidad de la interfaz <input type="range" id="opacity-slider" min="0.45" max="1" step="0.05" value="0.9" onchange="updateUIOpacity()"></label>
-            <button class="btn btn-primary" onclick="saveGame(false)">Guardar partida</button>
         </div>
-    </section>
+    </div>
 
-    <script src="js/items.js?v=raft-core-2"></script>
-    <script src="js/ui.js?v=raft-core-2"></script>
-    <script src="js/engine-v3.js"></script>
+    <!-- INTERFAZ DEL JUEGO (HUD) -->
+    <div id="game-ui" class="ui-layer hidden">
+        
+        <!-- Stats Top Left -->
+        <div id="stats-hud" class="hud-box">
+            <div id="ui-clock" style="color: #f1c40f; font-weight: bold; border-bottom: 1px solid #555; margin-bottom: 5px;">Día 1 - 08:00</div>
+            <div><span style="color:#e74c3c">♥</span> Hambre: <span id="ui-hp">100</span>%</div>
+            <div><span style="color:#3498db">▤</span> Sed: <span id="ui-thirst">100</span>%</div>
+            <div><span style="color:#f1c40f">☀</span> Sueño: <span id="ui-sleep">100</span>%</div>
+        </div>
+
+        <!-- Botones Laterales Derechos (Menús) -->
+        <div id="side-menus">
+            <button class="btn-icon" onclick="toggleMenu('inventory-modal')">🎒</button>
+            <button class="btn-icon" onclick="toggleMenu('craft-modal')">⚒</button>
+            <button class="btn-icon" onclick="toggleMenu('settings-modal')">⚙</button>
+        </div>
+
+        <!-- Controles Inferiores (Zoom, Hotbar y Acción) -->
+        <div id="bottom-controls">
+            <!-- Zoom centrado encima de la hotbar -->
+            <div id="zoom-controls">
+                <button class="btn-small" onclick="zoomIn()">Zoom +</button>
+                <button class="btn-small" onclick="zoomOut()">Zoom -</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="hotbar-slot selected" id="slot-0" onclick="selectSlot(0)"></div>
+                <div class="hotbar-slot" id="slot-1" onclick="selectSlot(1)"></div>
+                <div class="hotbar-slot" id="slot-2" onclick="selectSlot(2)"></div>
+                <button class="btn" id="action-btn" onclick="doAction()" style="padding: 15px; font-size: 16px;">Buscar</button>
+            </div>
+        </div>
+        
+        <div id="notifications"></div>
+    </div>
+
+    <!-- MODAL INVENTARIO -->
+    <div id="inventory-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Inventario (<span id="inv-count">0</span>/30)</h2>
+            <button class="btn-close" onclick="toggleMenu('inventory-modal')">X</button>
+        </div>
+        <div class="tabs">
+            <div class="tab active" onclick="setInvTab('todo')">Todo</div>
+            <div class="tab" onclick="setInvTab('mat')">▤ Materiales</div>
+            <div class="tab" onclick="setInvTab('herr')">⚒ Herramientas</div>
+            <div class="tab" onclick="setInvTab('com')">♨ Comida</div>
+        </div>
+        <div id="inv-grid" class="grid-content"></div>
+        <div class="lore-box">
+            <p id="lore-text">Selecciona un ítem.</p>
+            <div id="lore-actions"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CRAFTEO -->
+    <div id="craft-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Construcción</h2>
+            <button class="btn-close" onclick="toggleMenu('craft-modal')">X</button>
+        </div>
+        <div class="tabs">
+            <div class="tab active" onclick="setCraftTab('todo')">Todo</div>
+            <div class="tab" onclick="setCraftTab('herr')">⚒ Herramientas</div>
+            <div class="tab" onclick="setCraftTab('est')">⌂ Estructuras</div>
+        </div>
+        <div id="craft-list" class="list-content"></div>
+        <div class="lore-box">
+            <p id="craft-lore-text">Selecciona una receta.</p>
+            <div id="craft-actions"></div>
+        </div>
+    </div>
+
+    <!-- MODAL AJUSTES (Aquí va la transparencia y guardado) -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Opciones</h2>
+            <button class="btn-close" onclick="toggleMenu('settings-modal')">X</button>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px; color: white;">
+            <label>Transparencia de Menús:</label>
+            <input type="range" id="opacity-slider" min="0.3" max="1" step="0.1" value="0.9" onchange="updateOpacity()">
+            <hr style="border-color: #555;">
+            <button class="btn" style="background: #27ae60;" onclick="saveGame()">Guardar Partida</button>
+            <button class="btn" style="background: #e74c3c;" onclick="location.reload()">Salir al Menú</button>
+        </div>
+    </div>
+
+    <!-- CANVAS MOTOR GRÁFICO -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="js/items.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/engine.js"></script>
 </body>
 </html>
