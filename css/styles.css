@@ -1,4 +1,84 @@
-/* Estilos de Slots e Inventario */
+/* Variables Globales y Temas */
+:root {
+    --ui-opacity: 0.9;
+    --font-main: 'Courier New', monospace;
+    --menu-bg: rgba(47, 54, 64, var(--ui-opacity));
+    --menu-border: #353b48;
+    --text-color: #dcdde1;
+    --btn-bg: #273c75;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-main); user-select: none; }
+body { overflow: hidden; background: #000; }
+
+/* El Canvas ocupa toda la pantalla de fondo */
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0; left: 0;
+    z-index: 1;
+}
+
+/* Capas de UI por encima del Canvas */
+.ui-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.hidden { display: none !important; }
+
+/* Menú de Inicio */
+#main-menu {
+    background: linear-gradient(to bottom, #0984e3, #0a3d62);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: auto;
+    z-index: 1000;
+}
+
+#main-menu h1 { color: white; font-size: 3rem; margin-bottom: 20px; text-shadow: 2px 2px 0 #000; }
+
+.menu-box {
+    background: var(--menu-bg);
+    border: 4px solid var(--menu-border);
+    padding: 20px; border-radius: 10px;
+    display: flex; flex-direction: column; gap: 15px; text-align: center; color: var(--text-color);
+    width: 300px;
+}
+
+.input-field { padding: 10px; font-size: 16px; border-radius: 5px; border: 2px solid #ccc; text-align: center; }
+.color-picker { width: 100%; height: 40px; cursor: pointer; border: none; background: none; }
+
+.btn {
+    background: var(--btn-bg); color: white; border: 2px solid rgba(0,0,0,0.3);
+    padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer;
+    pointer-events: auto;
+}
+.btn:active { transform: scale(0.95); }
+
+/* HUD Superior */
+#top-hud {
+    display: flex; gap: 10px; padding: 10px; align-items: center;
+    background: var(--menu-bg); border-bottom: 2px solid var(--menu-border);
+    pointer-events: auto;
+}
+.slider-container { color: var(--text-color); display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; }
+
+/* Modales y Ventanas (Inventario) */
+.modal {
+    position: absolute; top: 10%; left: 10%;
+    width: 80%; height: 75%;
+    background: var(--menu-bg);
+    border: 4px solid var(--menu-border);
+    border-radius: 10px; z-index: 100;
+    pointer-events: auto; display: flex; flex-direction: column;
+}
+
+/* Slots de Hotbar e Inventario */
 .hotbar-slot {
     width: 60px; height: 60px;
     background: rgba(34, 34, 34, var(--ui-opacity));
