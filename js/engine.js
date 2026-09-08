@@ -41,22 +41,31 @@ function panoramaLoop() {
     }
 }
 
-function startGame() {
-    player.icon = document.getElementById('player-icon').value || 'Kaz'; player.color = document.getElementById('player-color').value; difficulty = document.getElementById('difficulty-select').value;
-    document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
-    giveItem('gancho_t1', 1); giveItem('papa', 2); hotbar[0] = inventory[0].uid; hotbar[1] = inventory[1].uid;
-    renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); logEvent("El océano se expande ante ti.", "event");
-    isGameRunning = true; requestAnimationFrame(gameLoop);
+function startNewGame() {
+    currentSaveSlot = 1; 
+    try { for(let i=1; i<=3; i++) { if(!localStorage.getItem('oceancraft_save_'+i)) { currentSaveSlot = i; break; } } } catch(e) {}
+    startGame();
 }
 
-function startNewGame() {
-    currentSaveSlot = 1; for(let i=1; i<=3; i++) { if(!localStorage.getItem('oceancraft_save_'+i)) { currentSaveSlot = i; break; } }
-    startGame();
+function startGame() {
+    try {
+        player.icon = document.getElementById('player-icon').value || 'Kaz'; player.color = document.getElementById('player-color').value; difficulty = document.getElementById('difficulty-select').value;
+        document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
+        
+        camera.x = player.x; camera.y = player.y;
+        giveItem('gancho_t1', 1); giveItem('papa', 2); 
+        
+        if(inventory[0]) hotbar[0] = inventory[0].uid; 
+        if(inventory[1]) hotbar[1] = inventory[1].uid;
+        
+        renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); logEvent("El océano se expande ante ti.", "event");
+        isGameRunning = true; requestAnimationFrame(gameLoop);
+    } catch(err) { console.error("Error iniciando: ", err); }
 }
 
 function saveCurrentGame() {
     let data = { inventory, hotbar, playerStats, gameTime, gameDay, difficulty, raftTiles, structures, itemsGatheredTotal, playerIcon: player.icon, playerColor: player.color };
-    localStorage.setItem('oceancraft_save_' + currentSaveSlot, JSON.stringify(data)); showNotification("Partida Guardada en Slot " + currentSaveSlot); AudioSys.play('pop');
+    try { localStorage.setItem('oceancraft_save_' + currentSaveSlot, JSON.stringify(data)); showNotification("Partida Guardada en Slot " + currentSaveSlot); AudioSys.play('pop'); } catch(e){}
 }
 
 function loadGameSlot(slot) {
@@ -64,6 +73,7 @@ function loadGameSlot(slot) {
     if(data) {
         let p = JSON.parse(data); inventory = p.inventory; hotbar = p.hotbar; playerStats = p.playerStats; gameTime = p.gameTime; gameDay = p.gameDay; difficulty = p.difficulty; raftTiles = p.raftTiles; structures = p.structures; itemsGatheredTotal = p.itemsGatheredTotal || 0; player.icon = p.playerIcon || 'Kaz'; player.color = p.playerColor || '#ff4757'; currentSaveSlot = slot;
         document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
+        camera.x = player.x; camera.y = player.y;
         renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); isGameRunning = true; requestAnimationFrame(gameLoop);
     } else { currentSaveSlot = slot; startNewGame(); }
 }
@@ -72,7 +82,7 @@ function die() {
     isGameRunning = false; document.getElementById('game-ui').classList.add('hidden'); document.getElementById('death-screen').classList.remove('hidden');
     document.getElementById('death-days').innerText = gameDay; document.getElementById('death-items').innerText = itemsGatheredTotal;
     document.getElementById('death-cause').innerText = playerStats.hp <= 0 ? "Moriste de daño físico." : "Tu cuerpo sucumbió a la intoxicación.";
-    localStorage.removeItem('oceancraft_save_' + currentSaveSlot);
+    try { localStorage.removeItem('oceancraft_save_' + currentSaveSlot); } catch(e){}
 }
 
 window.addEventListener('wheel', e => { camera.zoom = Math.max(0.4, Math.min(camera.zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2.0)); }, { passive: true });

@@ -4,7 +4,6 @@ let currentCraftTab = 'todo';
 let currentStation = 'basic';
 let selectedInvUID = null;
 
-// Menu System
 function switchMenu(menuId) {
     ['menu-home', 'menu-new', 'menu-load', 'menu-cosmetics'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById(menuId).classList.remove('hidden');
@@ -46,7 +45,6 @@ function renderLoadSlots() {
 
 function deleteSave(slot) { if(confirm(`¿Borrar Slot ${slot}?`)) { localStorage.removeItem('oceancraft_save_' + slot); renderLoadSlots(); } }
 
-// In-Game UI
 function toggleMenu(id) {
     let el = document.getElementById(id); el.classList.toggle('hidden');
     if(!el.classList.contains('hidden')) { AudioSys.play('click'); if(id==='inventory-modal') renderInventory(); if(id==='craft-modal') renderCrafting(currentStation); }
@@ -71,7 +69,6 @@ function showNotification(text) {
     c.appendChild(t); setTimeout(() => t.remove(), 3000);
 }
 
-// Inventory & Crafting Logic
 function setInvTab(tab, el) { currentInvTab = tab; document.querySelectorAll('#inventory-modal .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderInventory(); }
 function setCraftTab(tab, el) { currentCraftTab = tab; document.querySelectorAll('#craft-modal .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderCrafting(currentStation); }
 function openCrafting(station) { currentStation = station; document.getElementById('craft-title').innerText = station.toUpperCase(); toggleMenu('craft-modal'); }
@@ -90,7 +87,7 @@ function renderInventory() {
     if(filterVal === 'recent') filtered.sort((a,b) => b.time - a.time); 
     if(filterVal === 'qty') filtered.sort((a,b) => b.qty - a.qty); 
     if(filterVal === 'az') filtered.sort((a,b) => ITEMS_DB[a.id].name.localeCompare(ITEMS_DB[b.id].name));
-    filtered.sort((a,b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0)); // Favs top
+    filtered.sort((a,b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0)); 
 
     filtered.forEach(item => {
         let base = ITEMS_DB[item.id]; let div = document.createElement('div'); 

@@ -20,10 +20,11 @@
         <h1 class="terraria-title" id="menu-title">Oceancraft</h1>
 
         <div id="menu-home" style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
-            <button class="terraria-btn" onclick="switchMenu('menu-new')">Single Player</button>
-            <button class="terraria-btn" onclick="switchMenu('menu-load')">Multiplayer (Continuar)</button>
+            <button class="terraria-btn" onclick="switchMenu('menu-new')">Singleplayer</button>
+            <button class="terraria-btn" onclick="switchMenu('menu-load')">Continuar</button>
+            <button class="terraria-btn" onclick="alert('Los servidores Multijugador están en mantenimiento.')">Multijugador</button>
             <button class="terraria-btn" onclick="switchMenu('menu-cosmetics')">Cosméticos</button>
-            <button class="terraria-btn" onclick="alert('Próximamente...')">Settings</button>
+            <button class="terraria-btn" onclick="toggleMenu('options-modal')">Opciones</button>
         </div>
 
         <div class="menu-box glass hidden" id="menu-new" style="width: 500px; text-align: center;">
