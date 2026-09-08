@@ -7,118 +7,127 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- FONDO DE JUEGO (Se renderiza inmediatamente) -->
-    <canvas id="gameCanvas"></canvas>
 
-    <!-- PANTALLA DE CARGA ESTILO TERRARIA (Desaparece sola) -->
-    <div id="splash-screen">
-        <h1 class="splash-logo">Star Studios</h1>
-    </div>
-
-    <!-- CAPA DE MENÚ -->
-    <div id="menu-layer" class="ui-layer hidden">
-        
-        <!-- Menú Principal -->
-        <div id="main-menu" class="menu-panel">
-            <h1 class="ocean-title">OCEANCRAFT</h1>
-            <button class="btn btn-menu" onclick="showMenuPanel('new-game-panel')">Nuevo Juego</button>
-            <button class="btn btn-menu" onclick="showMenuPanel('continue-panel')">Continuar</button>
-            <button class="btn btn-menu" onclick="showMenuPanel('cosmetics-panel')">Cosméticos</button>
-        </div>
-
-        <!-- Nuevo Juego -->
-        <div id="new-game-panel" class="menu-panel hidden">
-            <h2>Crear Mundo</h2>
-            <input type="text" id="world-name" class="input-field" placeholder="Nombre del Mundo (Ej: Archipiélago)">
+    <!-- MENÚ DE INICIO -->
+    <div id="main-menu" class="ui-layer">
+        <h1 class="ocean-title">Oceancraft</h1>
+        <div class="menu-box">
+            <h3>Nueva Partida</h3>
+            <input type="text" id="player-icon" class="input-field" placeholder="Tu icono (Ej: Kaz)" maxlength="3">
+            <input type="color" id="player-color" class="color-picker" value="#e74c3c">
             
-            <label>Dificultad:</label>
-            <select id="world-diff" class="input-field">
+            <select id="diff-select" class="input-field" style="margin-top:5px;">
                 <option value="0.5">Fácil</option>
                 <option value="1" selected>Normal</option>
-                <option value="2">Difícil</option>
+                <option value="1.5">Difícil</option>
             </select>
             
-            <label>Frecuencia de Islas/Barcos:</label>
-            <select id="world-freq" class="input-field">
-                <option value="low">Baja</option>
-                <option value="normal" selected>Normal</option>
-                <option value="high">Alta</option>
-            </select>
+            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                <button class="btn" onclick="startGame(1, true)">Crear Slot 1</button>
+                <button class="btn" onclick="startGame(2, true)">Crear Slot 2</button>
+            </div>
             
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-close" onclick="showMenuPanel('main-menu')">Volver</button>
-                <button class="btn" onclick="createNewGame()">Empezar</button>
+            <h3 style="margin-top: 15px;">Continuar</h3>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn" style="background:#0984e3;" onclick="startGame(1, false)">Cargar Slot 1</button>
+                <button class="btn" style="background:#0984e3;" onclick="startGame(2, false)">Cargar Slot 2</button>
             </div>
-        </div>
-
-        <!-- Continuar -->
-        <div id="continue-panel" class="menu-panel hidden">
-            <h2>Seleccionar Partida</h2>
-            <div id="slots-container">
-                <div class="slot-card" onclick="loadGame(1)"><div class="slot-icon">1</div><div class="slot-info" id="slot-1-info"></div></div>
-                <div class="slot-card" onclick="loadGame(2)"><div class="slot-icon">2</div><div class="slot-info" id="slot-2-info"></div></div>
-                <div class="slot-card" onclick="loadGame(3)"><div class="slot-icon">3</div><div class="slot-info" id="slot-3-info"></div></div>
-            </div>
-            <button class="btn btn-close" style="margin-top:20px; width:100%;" onclick="showMenuPanel('main-menu')">Volver</button>
-        </div>
-
-        <!-- Cosméticos (Rediseño visual en tiempo real) -->
-        <div id="cosmetics-panel" class="menu-panel hidden" style="max-width: 500px;">
-            <h2>Cosméticos</h2>
-            <div class="cosmetics-layout">
-                <!-- Izquierda: Controles -->
-                <div class="cosmetics-left">
-                    <label>Color del Personaje:</label>
-                    <input type="color" id="player-color" class="color-picker" value="#f39c12" oninput="updatePreview()">
-                    <label>Letra Inicial:</label>
-                    <input type="text" id="player-icon" class="input-field" value="K" maxlength="1" oninput="updatePreview()" style="text-align: center; font-size: 20px;">
-                    <label>Opacidad UI:</label>
-                    <input type="range" id="opacity-slider" min="0.3" max="1" step="0.1" value="0.85" onchange="updateOpacity()" style="width:100%;">
-                </div>
-                <!-- Derecha: Previsualización -->
-                <div class="cosmetics-right">
-                    <div id="player-preview">K</div>
-                </div>
-            </div>
-            <button class="btn btn-close" style="margin-top:20px; width:100%;" onclick="showMenuPanel('main-menu')">Volver</button>
         </div>
     </div>
 
-    <!-- INTERFAZ DEL JUEGO -->
-    <div id="game-ui" class="hidden ui-layer">
-        <!-- (El HUD se mantiene igual, se inyecta por UI.js) -->
-        <div class="hud-box">
-            <strong id="ui-clock" style="font-size:18px; color:#f1c40f;">Día 1 - 08:00</strong><br>
-            ❤ Vida: <span id="ui-hp" style="color:#e74c3c; font-weight:bold;">100</span><br>
-            🍖 Hambre: <span id="ui-food" style="color:#e67e22;">100</span><br>
-            💧 Sed: <span id="ui-thirst" style="color:#3498db;">100</span><br>
-            💤 Sueño: <span id="ui-sleep" style="color:#9b59b6;">100</span>
+    <!-- INTERFAZ DEL JUEGO (HUD) -->
+    <div id="game-ui" class="ui-layer hidden">
+        
+        <!-- Stats Top Left -->
+        <div id="stats-hud" class="hud-box">
+            <div id="ui-clock" style="color: #f1c40f; font-weight: bold; border-bottom: 1px solid #555; margin-bottom: 5px;">Día 1 - 08:00</div>
+            <div><span style="color:#e74c3c">♥</span> Hambre: <span id="ui-hp">100</span>%</div>
+            <div><span style="color:#3498db">▤</span> Sed: <span id="ui-thirst">100</span>%</div>
+            <div><span style="color:#f1c40f">☀</span> Sueño: <span id="ui-sleep">100</span>%</div>
         </div>
+
+        <!-- Botones Laterales Derechos (Menús) -->
         <div id="side-menus">
             <button class="btn-icon" onclick="toggleMenu('inventory-modal')">🎒</button>
-            <button class="btn-icon" onclick="toggleMenu('craft-modal')">🔨</button>
-            <button class="btn-icon" onclick="saveGame()">💾</button>
+            <button class="btn-icon" onclick="toggleMenu('craft-modal')">⚒</button>
+            <button class="btn-icon" onclick="toggleMenu('settings-modal')">⚙</button>
         </div>
+
+        <!-- Controles Inferiores (Zoom, Hotbar y Acción) -->
         <div id="bottom-controls">
-            <div style="display: flex; gap: 10px;">
+            <!-- Zoom centrado encima de la hotbar -->
+            <div id="zoom-controls">
+                <button class="btn-small" onclick="zoomIn()">Zoom +</button>
+                <button class="btn-small" onclick="zoomOut()">Zoom -</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
                 <div class="hotbar-slot selected" id="slot-0" onclick="selectSlot(0)"></div>
                 <div class="hotbar-slot" id="slot-1" onclick="selectSlot(1)"></div>
                 <div class="hotbar-slot" id="slot-2" onclick="selectSlot(2)"></div>
-            </div>
-            <button id="action-btn" class="btn" style="width: 220px; font-size: 18px;" onclick="doAction()">Buscar a mano</button>
-            <div id="zoom-container">
-                <span>🔍</span>
-                <input type="range" id="zoom-slider" min="0.5" max="3" step="0.1" value="1.5" onchange="updateZoom()">
+                <button class="btn" id="action-btn" onclick="doAction()" style="padding: 15px; font-size: 16px;">Buscar</button>
             </div>
         </div>
+        
         <div id="notifications"></div>
     </div>
 
-    <!-- Scripts -->
+    <!-- MODAL INVENTARIO -->
+    <div id="inventory-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Inventario (<span id="inv-count">0</span>/30)</h2>
+            <button class="btn-close" onclick="toggleMenu('inventory-modal')">X</button>
+        </div>
+        <div class="tabs">
+            <div class="tab active" onclick="setInvTab('todo')">Todo</div>
+            <div class="tab" onclick="setInvTab('mat')">▤ Materiales</div>
+            <div class="tab" onclick="setInvTab('herr')">⚒ Herramientas</div>
+            <div class="tab" onclick="setInvTab('com')">♨ Comida</div>
+        </div>
+        <div id="inv-grid" class="grid-content"></div>
+        <div class="lore-box">
+            <p id="lore-text">Selecciona un ítem.</p>
+            <div id="lore-actions"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CRAFTEO -->
+    <div id="craft-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Construcción</h2>
+            <button class="btn-close" onclick="toggleMenu('craft-modal')">X</button>
+        </div>
+        <div class="tabs">
+            <div class="tab active" onclick="setCraftTab('todo')">Todo</div>
+            <div class="tab" onclick="setCraftTab('herr')">⚒ Herramientas</div>
+            <div class="tab" onclick="setCraftTab('est')">⌂ Estructuras</div>
+        </div>
+        <div id="craft-list" class="list-content"></div>
+        <div class="lore-box">
+            <p id="craft-lore-text">Selecciona una receta.</p>
+            <div id="craft-actions"></div>
+        </div>
+    </div>
+
+    <!-- MODAL AJUSTES (Aquí va la transparencia y guardado) -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Opciones</h2>
+            <button class="btn-close" onclick="toggleMenu('settings-modal')">X</button>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px; color: white;">
+            <label>Transparencia de Menús:</label>
+            <input type="range" id="opacity-slider" min="0.3" max="1" step="0.1" value="0.9" onchange="updateOpacity()">
+            <hr style="border-color: #555;">
+            <button class="btn" style="background: #27ae60;" onclick="saveGame()">Guardar Partida</button>
+            <button class="btn" style="background: #e74c3c;" onclick="location.reload()">Salir al Menú</button>
+        </div>
+    </div>
+
+    <!-- CANVAS MOTOR GRÁFICO -->
+    <canvas id="gameCanvas"></canvas>
+
     <script src="js/items.js"></script>
-    <script src="js/combat.js"></script>
     <script src="js/engine.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/menu.js"></script>
 </body>
 </html>
