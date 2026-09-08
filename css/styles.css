@@ -10,15 +10,15 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-main); user-select: none; }
 body { overflow: hidden; background: #000; color: white; }
 
-/* El canvas se dibuja detrás de todo */
 canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 .hidden { display: none !important; }
 
-/* === PANTALLA STAR STUDIOS ESTILO TERRARIA === */
+/* === PANTALLA STAR STUDIOS (CORREGIDA) === */
 #splash-screen {
     position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: #000; z-index: 100; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%); /* Transparente para ver el océano */
+    z-index: 100; display: flex; align-items: center; justify-content: center;
     transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none;
 }
 .splash-logo { 
@@ -26,7 +26,7 @@ canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0
     text-transform: uppercase; text-shadow: 0 0 30px rgba(255,255,255,0.8); 
 }
 
-/* === MENÚS ESTILIZADOS === */
+/* === MENÚS === */
 #menu-layer { display: flex; align-items: center; justify-content: center; pointer-events: auto; background: rgba(0,0,0,0.3); }
 .menu-panel { 
     background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.15); 
@@ -41,7 +41,6 @@ canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0
 }
 .menu-panel h2 { margin-bottom: 25px; color: #f5f6fa; font-weight: 600; font-size: 1.8rem; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
 
-/* Inputs y Botones Premium */
 .input-field { 
     width: 100%; padding: 14px; font-size: 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); 
     background: rgba(0,0,0,0.6); color: white; margin-bottom: 18px; outline: none; transition: 0.3s; 
@@ -80,7 +79,7 @@ canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0
 .slot-card:hover { background: rgba(255,255,255,0.15); transform: translateX(5px); border-color: rgba(255,255,255,0.3); }
 .slot-icon { width: 45px; height: 45px; background: linear-gradient(135deg, #e67e22, #d35400); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; margin-right: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
-/* HUD (Restaurado básico) */
+/* HUD */
 .hud-box { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 12px; font-size: 15px; pointer-events: auto; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
 #side-menus { position: absolute; top: 15px; right: 15px; display: flex; flex-direction: column; }
 #bottom-controls { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; }

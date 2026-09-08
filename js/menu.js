@@ -1,19 +1,23 @@
 
-// ESTILO TERRARIA: El Canvas se empieza a dibujar INMEDIATAMENTE detrás del Splash.
 document.addEventListener("DOMContentLoaded", () => {
-    gameState = 'MENU';
-    requestAnimationFrame(gameLoop); // Empieza a dibujar el océano de fondo al instante
+    try {
+        gameState = 'MENU';
+        requestAnimationFrame(gameLoop); 
+    } catch(e) {
+        console.error("Error al arrancar el motor:", e);
+    }
 
-    // Retraso de 2 segundos para Star Studios, luego desvanece
+    // Temporizadores seguros
     setTimeout(() => {
         let splash = document.getElementById('splash-screen');
-        splash.style.opacity = '0';
+        if(splash) splash.style.opacity = '0';
         
         setTimeout(() => {
-            splash.classList.add('hidden');
-            document.getElementById('menu-layer').classList.remove('hidden');
-            updatePreview(); // Inicializar el preview
-        }, 1500); // 1.5s de fade out
+            if(splash) splash.classList.add('hidden');
+            let menu = document.getElementById('menu-layer');
+            if(menu) menu.classList.remove('hidden');
+            try { updatePreview(); } catch(e) {}
+        }, 1500); 
     }, 2000); 
 });
 
@@ -23,21 +27,22 @@ function showMenuPanel(panelId) {
     if (panelId === 'continue-panel') updateSaveSlots();
 }
 
-// SISTEMA DE COSMÉTICOS: Previsualización en Tiempo Real
 function updatePreview() {
     let color = document.getElementById('player-color').value;
     let icon = document.getElementById('player-icon').value || "";
     let preview = document.getElementById('player-preview');
-    
-    preview.style.background = color;
-    preview.innerText = icon.substring(0, 1).toUpperCase();
+    if(preview) {
+        preview.style.background = color;
+        preview.innerText = icon.substring(0, 1).toUpperCase();
+    }
 }
 
 function updateSaveSlots() {
     for (let i = 1; i <= 3; i++) {
         let saveStr = localStorage.getItem('oceancraft_s' + i);
         let infoDiv = document.getElementById('slot-' + i + '-info');
-        
+        if (!infoDiv) continue;
+
         if (saveStr) {
             let data = JSON.parse(saveStr);
             let playTime = data.playTime ? Math.floor(data.playTime / 60) : 0;
@@ -50,28 +55,32 @@ function updateSaveSlots() {
     }
 }
 
-// ARREGLO DEL BUG CRÍTICO DE CREACIÓN
 function createNewGame() {
-    let wName = document.getElementById('world-name').value || "Mi Mundo";
-    let diff = document.getElementById('world-diff').value;
-    let freq = document.getElementById('world-freq').value;
-    let color = document.getElementById('player-color').value;
-    let icon = document.getElementById('player-icon').value || "K";
-    
-    let config = {
-        name: wName,
-        diff: parseFloat(diff),
-        freq: freq,
-        color: color,
-        icon: icon.substring(0, 1).toUpperCase()
-    };
+    try {
+        let wName = document.getElementById('world-name').value || "Mi Mundo";
+        let diff = document.getElementById('world-diff').value;
+        let freq = document.getElementById('world-freq').value;
+        let color = document.getElementById('player-color').value;
+        let icon = document.getElementById('player-icon').value || "K";
+        
+        let config = {
+            name: wName,
+            diff: parseFloat(diff),
+            freq: freq,
+            color: color,
+            icon: icon.substring(0, 1).toUpperCase()
+        };
 
-    let slotToUse = 1;
-    for (let i = 1; i <= 3; i++) {
-        if (!localStorage.getItem('oceancraft_s' + i)) { slotToUse = i; break; }
+        let slotToUse = 1;
+        for (let i = 1; i <= 3; i++) {
+            if (!localStorage.getItem('oceancraft_s' + i)) { slotToUse = i; break; }
+        }
+        
+        startGame(slotToUse, true, config);
+    } catch(e) {
+        console.error("Error crítico al crear mundo:", e);
+        alert("Ocurrió un error al crear el mundo. Revisa la consola (F12).");
     }
-    
-    startGame(slotToUse, true, config);
 }
 
 function loadGame(slotIndex) {

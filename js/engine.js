@@ -23,11 +23,12 @@ function startGame(slotIndex, isNew, config) {
         game.inv = []; game.hotbar = [null, null, null]; game.structures = [];
         game.stats = { hp: 100, h: 100, s: 100, su: 100 }; game.time = { acts: 0, h: 8, d: 1 };
         
-        // FAILSAFE: Si items.js no cargó bien, no rompemos todo
         try {
-            giveItem('gancho_t1', 1); giveItem('madera', 2);
-            if(game.inv.length > 0) game.hotbar[0] = game.inv[0].uid;
-        } catch(e) { console.error("Error al dar items iniciales:", e); }
+            if(typeof giveItem === 'function') {
+                giveItem('gancho_t1', 1); giveItem('madera', 2);
+                if(game.inv.length > 0) game.hotbar[0] = game.inv[0].uid;
+            }
+        } catch(e) { console.error("Error items.js no cargado:", e); }
     } else {
         game = JSON.parse(save);
     }
@@ -35,7 +36,7 @@ function startGame(slotIndex, isNew, config) {
     document.getElementById('menu-layer').classList.add('hidden');
     document.getElementById('game-ui').classList.remove('hidden');
     
-    try { updateHUD(); renderHotbar(); } catch(e){}
+    try { if(typeof updateHUD === 'function') updateHUD(); if(typeof renderHotbar === 'function') renderHotbar(); } catch(e){}
     camera.x = player.x; camera.y = player.y;
     gameState = 'GAME'; 
 }
@@ -61,40 +62,49 @@ function update() {
 }
 
 function draw() {
-    ctx.fillStyle = '#0a3d62'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
+    try {
+        ctx.fillStyle = '#0a3d62'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2;
-    for(let i = -15; i < 15; i++) {
-        ctx.beginPath();
-        for(let wx = camera.x - 1000; wx < camera.x + 1000; wx += 40) {
-            let wy = (i * 80) + Math.sin((wx * 0.02) + globalTime * 2) * 15; ctx.lineTo(wx, wy);
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2;
+        for(let i = -15; i < 15; i++) {
+            ctx.beginPath();
+            for(let wx = camera.x - 1000; wx < camera.x + 1000; wx += 40) {
+                let wy = (i * 80) + Math.sin((wx * 0.02) + globalTime * 2) * 15; ctx.lineTo(wx, wy);
+            }
+            ctx.stroke();
         }
-        ctx.stroke();
-    }
-    
-    let raftRenderX = (gameState !== 'GAME') ? camera.x - 50 : 0;
-    ctx.fillStyle = '#8B4513'; ctx.strokeStyle = '#5c2e0b'; ctx.lineWidth = 3; let offset = RAFT_LIMIT;
-    for (let row = 0; row < RAFT_SIZE; row++) {
-        for (let col = 0; col < RAFT_SIZE; col++) {
-            let px = (col * TILE) - offset + raftRenderX; let py = (row * TILE) - offset;
-            ctx.fillRect(px, py, TILE, TILE); ctx.strokeRect(px, py, TILE, TILE);
+        
+        let raftRenderX = (gameState !== 'GAME') ? camera.x - 50 : 0;
+        ctx.fillStyle = '#8B4513'; ctx.strokeStyle = '#5c2e0b'; ctx.lineWidth = 3; let offset = RAFT_LIMIT;
+        for (let row = 0; row < RAFT_SIZE; row++) {
+            for (let col = 0; col < RAFT_SIZE; col++) {
+                let px = (col * TILE) - offset + raftRenderX; let py = (row * TILE) - offset;
+                ctx.fillRect(px, py, TILE, TILE); ctx.strokeRect(px, py, TILE, TILE);
+            }
         }
-    }
 
-    if (gameState === 'GAME') {
-        ctx.fillStyle = game.playerConfig.color; ctx.beginPath(); ctx.arc(player.x, player.y, 16, 0, Math.PI * 2); ctx.fill(); 
-        ctx.strokeStyle = '#000'; ctx.stroke();
-        ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
-        ctx.fillText(game.playerConfig.icon, player.x, player.y);
+        if (gameState === 'GAME') {
+            ctx.fillStyle = game.playerConfig.color || '#f39c12'; ctx.beginPath(); ctx.arc(player.x, player.y, 16, 0, Math.PI * 2); ctx.fill(); 
+            ctx.strokeStyle = '#000'; ctx.stroke();
+            ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
+            ctx.fillText(game.playerConfig.icon || 'K', player.x, player.y);
+        }
+        
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+        birds.forEach(b => {
+            ctx.beginPath(); let flap = Math.sin(globalTime * 10 + b.offset) * 5;
+            ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + 10, b.y - flap); ctx.lineTo(b.x + 20, b.y); ctx.stroke();
+        });
+        ctx.restore();
+    } catch(e) {
+        // Evitar que un error mate el bucle entero
+        console.error("Error en draw:", e);
     }
-    
-    ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
-    birds.forEach(b => {
-        ctx.beginPath(); let flap = Math.sin(globalTime * 10 + b.offset) * 5;
-        ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + 10, b.y - flap); ctx.lineTo(b.x + 20, b.y); ctx.stroke();
-    });
-    ctx.restore();
 }
 
-function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+function gameLoop() { 
+    update(); 
+    draw(); 
+    requestAnimationFrame(gameLoop); 
+}
