@@ -21,7 +21,6 @@ let structures = [];
 let mouseWorldX = 0, mouseWorldY = 0;
 let currentSaveSlot = 1;
 
-// Weather Engine Lerp
 let weather = { current: 'CLEAR', target: 'CLEAR', progress: 1.0, fogDensity: 0 };
 const WEATHER_COLORS = {
     'CLEAR': { top: [2, 132, 199], bottom: [12, 74, 110] },
@@ -29,19 +28,10 @@ const WEATHER_COLORS = {
     'FOG':   { top: [100, 116, 139], bottom: [71, 85, 105] }
 };
 let curTop = [...WEATHER_COLORS['CLEAR'].top], curBot = [...WEATHER_COLORS['CLEAR'].bottom];
-
-// Hook Mechanic
 let activeHook = null; 
-
-// SVG Pre-renderer
 const RENDER_CACHE = {};
-function preRenderSVG(id, svgStr, size) {
-    if(RENDER_CACHE[id]) return RENDER_CACHE[id];
-    let img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-    RENDER_CACHE[id] = img; return img;
-}
 
-// Islas Orgánicas
+// Generador de Islas
 let islands = [{x: 800, y: 0, radius: 250, points: []}];
 islands.forEach(isl => {
     for(let i = 0; i < 16; i++) {
@@ -51,7 +41,12 @@ islands.forEach(isl => {
     }
 });
 
-// Menu & Initialization
+function preRenderSVG(id, svgStr, size) {
+    if(RENDER_CACHE[id]) return RENDER_CACHE[id];
+    let img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+    RENDER_CACHE[id] = img; return img;
+}
+
 let panoramaActive = true;
 
 window.onload = () => {
@@ -61,10 +56,10 @@ window.onload = () => {
             document.getElementById('loading-screen').classList.add('hidden'); 
             document.getElementById('main-menu').classList.remove('hidden'); 
             isGameRunning = false; 
-            requestAnimationFrame(panoramaLoop); // Inicia el giro panorámico
+            requestAnimationFrame(panoramaLoop); 
         }, 500);
     }, 1000);
-}
+};
 
 function panoramaLoop() {
     if(!isGameRunning && panoramaActive) {
@@ -76,15 +71,24 @@ function panoramaLoop() {
     }
 }
 
+function startGame() {
+    player.icon = document.getElementById('player-icon').value || 'Kaz'; 
+    player.color = document.getElementById('player-color').value;
+    difficulty = document.getElementById('difficulty-select').value;
+    document.getElementById('main-menu').classList.add('hidden'); 
+    document.getElementById('game-ui').classList.remove('hidden');
+    giveItem('gancho_t1', 1); giveItem('papa', 2); hotbar[0] = inventory[0].uid; hotbar[1] = inventory[1].uid;
+    renderHotbarUI(); selectSlot(0); logEvent("El océano se expande ante ti.", "event");
+    isGameRunning = true; 
+    requestAnimationFrame(gameLoop);
+}
+
 function startNewGame() {
-    currentSaveSlot = 1; // Busca el primer slot vacío para autoguardar
+    currentSaveSlot = 1; 
     for(let i=1; i<=3; i++) { if(!localStorage.getItem('oceancraft_save_'+i)) { currentSaveSlot = i; break; } }
     panoramaActive = false;
     startGame();
 }
-
-// Dentro de tu función loadGameSlot(slot) existente, añade esto en la primera línea dentro del if(data):
-// panoramaActive = false;
 
 function saveCurrentGame() {
     let data = { inventory, hotbar, playerStats, gameTime, gameDay, difficulty, raftTiles, structures, itemsGatheredTotal, playerIcon: player.icon, playerColor: player.color };
@@ -98,10 +102,11 @@ function loadGameSlot(slot) {
         let p = JSON.parse(data);
         inventory = p.inventory; hotbar = p.hotbar; playerStats = p.playerStats; gameTime = p.gameTime; gameDay = p.gameDay; difficulty = p.difficulty; raftTiles = p.raftTiles; structures = p.structures; itemsGatheredTotal = p.itemsGatheredTotal || 0;
         player.icon = p.playerIcon || 'Kaz'; player.color = p.playerColor || '#ff4757'; currentSaveSlot = slot;
-        panoramaActive = false;
         document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden');
-        renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); isGameRunning = true; requestAnimationFrame(gameLoop);
-    } else { currentSaveSlot = slot; startGame(); }
+        renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); 
+        panoramaActive = false;
+        isGameRunning = true; requestAnimationFrame(gameLoop);
+    } else { currentSaveSlot = slot; startNewGame(); }
 }
 
 function die() {
@@ -114,14 +119,8 @@ function die() {
 }
 
 // Controls & Interaction
-window.addEventListener('wheel', e => { 
-    camera.zoom = Math.max(0.4, Math.min(camera.zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2.0)); 
-}, { passive: true });
-
-canvas.addEventListener('mousemove', e => { 
-    mouseWorldX = (e.clientX - canvas.width / 2) / camera.zoom + camera.x; 
-    mouseWorldY = (e.clientY - canvas.height / 2) / camera.zoom + camera.y; 
-});
+window.addEventListener('wheel', e => { camera.zoom = Math.max(0.4, Math.min(camera.zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2.0)); }, { passive: true });
+canvas.addEventListener('mousemove', e => { mouseWorldX = (e.clientX - canvas.width / 2) / camera.zoom + camera.x; mouseWorldY = (e.clientY - canvas.height / 2) / camera.zoom + camera.y; });
 
 function doPrimaryAction() {
     let uid = hotbar[selectedSlot]; let item = inventory.find(i => i.uid === uid);
@@ -144,13 +143,9 @@ canvas.addEventListener('click', (e) => {
 
     // Recolección de agua
     if (activeId === 'botella_vacia' && !raftTiles.includes(tileKey) && !onIsland) {
-        removeItem(hotbar[selectedSlot], 1);
-        giveItem('agua_salada', 1);
-        AudioSys.play('splash');
-        return;
+        removeItem(hotbar[selectedSlot], 1); giveItem('agua_salada', 1); AudioSys.play('splash'); return;
     }
 
-    // Structure Building & Raft Expanding
     if (ITEMS_DB[activeId] && ITEMS_DB[activeId].cat === 'est') {
         if (ITEMS_DB[activeId].buildType === 'floor') {
             if (!raftTiles.includes(tileKey) && !onIsland) {
@@ -164,20 +159,18 @@ canvas.addEventListener('click', (e) => {
         }
     }
     
-    // Breaking
     if (activeId === 'martillo') {
         let sIdx = structures.findIndex(s => s.r === gridR && s.c === gridC);
         if (sIdx !== -1) { let removed = structures.splice(sIdx, 1)[0]; giveItem(removed.type, 1); AudioSys.play('pop'); logEvent("Desmontaste " + ITEMS_DB[removed.type].name, 'action'); return; }
         if (raftTiles.includes(tileKey) && raftTiles.length > 1) { raftTiles.splice(raftTiles.indexOf(tileKey), 1); giveItem('madera', 1); AudioSys.play('pop'); return; }
     }
 
-    // Hook / Collection
     let clickedItemIndex = floatingItems.findIndex(i => Math.hypot(i.x - mouseWorldX, i.y - mouseWorldY) < i.size + 20);
     if (clickedItemIndex !== -1) {
         let item = floatingItems[clickedItemIndex]; let dist = Math.hypot(item.x - player.x, item.y - player.y);
-        if (dist < 120) { // Near grab
+        if (dist < 120) { 
             giveItem(item.type, 1); AudioSys.play('pickup'); floatingItems.splice(clickedItemIndex, 1); return;
-        } else if (activeId && activeId.startsWith('gancho') && !activeHook) { // Throw Hook
+        } else if (activeId && activeId.startsWith('gancho') && !activeHook) { 
             let hookStats = ITEMS_DB[activeId];
             if (dist <= hookStats.range) {
                 activeHook = { x: player.x, y: player.y, tx: item.x, ty: item.y, targetIdx: clickedItemIndex, speed: hookStats.speed, state: 'thrown', type: activeId };
@@ -186,13 +179,11 @@ canvas.addEventListener('click', (e) => {
         }
     }
 
-    // Movement
     if(raftTiles.includes(tileKey) || onIsland) {
         player.targetX = localX; player.targetY = localY; player.isMoving = true;
     }
 });
 
-// Loops & Spawners
 setInterval(() => {
     if (!isGameRunning) return;
     let mult = difficulty === 'hard' ? 1.5 : (difficulty === 'peaceful' ? 0.5 : 1);
@@ -212,12 +203,7 @@ setInterval(() => {
         size: 30, speed: 1.0 + Math.random() * 1.5, bobOffset: Math.random() * Math.PI * 2, caught: false
     });
     
-    // Particle spawner
-    if(Math.random() < 0.7) { 
-        raftParticles.push({ x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 200, life: 1.0, speed: -1.5 - Math.random()*2 });
-    }
-    
-    // Shark Spawner
+    if(Math.random() < 0.7) raftParticles.push({ x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 200, life: 1.0, speed: -1.5 - Math.random()*2 });
     if(difficulty !== 'peaceful' && entities.length < 1 && Math.random() < 0.05) {
         entities.push({ type: 'shark', x: camera.x - 300, y: camera.y, targetX: camera.x, targetY: camera.y, state: 'circling', angle: 0 });
     }
@@ -231,7 +217,6 @@ function update() {
         if (dist > player.speed) { player.x += (dx / dist) * player.speed; player.y += (dy / dist) * player.speed; } else { player.x = player.targetX; player.y = player.targetY; player.isMoving = false; }
     }
     
-    // Hook Logic con Area of Effect (AoE)
     if(activeHook) {
         if (activeHook.state === 'thrown') {
             let hdx = activeHook.tx - activeHook.x; let hdy = activeHook.ty - activeHook.y; let hDist = Math.hypot(hdx, hdy);
@@ -239,50 +224,29 @@ function update() {
             else { activeHook.state = 'returning'; AudioSys.play('splash'); }
         } else if (activeHook.state === 'returning') {
             let hdx = player.x - activeHook.x; let hdy = player.y - activeHook.y; let hDist = Math.hypot(hdx, hdy);
-            
-            // Arrastre en área: atrapa todos los items en un radio de 60px mientras vuelve
             floatingItems.forEach(f => {
-                if (Math.hypot(f.x - activeHook.x, f.y - activeHook.y) < 60) {
-                    f.caught = true;
-                    f.x = activeHook.x; f.y = activeHook.y; f.speed = 0;
-                }
+                if (Math.hypot(f.x - activeHook.x, f.y - activeHook.y) < 60) { f.caught = true; f.x = activeHook.x; f.y = activeHook.y; f.speed = 0; }
             });
-
-            if (hDist > activeHook.speed) { 
-                activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; 
-            } 
+            if (hDist > activeHook.speed) { activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; } 
             else { 
-                // Recolectar todos los items atrapados al llegar al jugador
-                floatingItems = floatingItems.filter(f => {
-                    if (f.caught) { giveItem(f.type, 1); AudioSys.play('pickup'); return false; }
-                    return true;
-                });
+                floatingItems = floatingItems.filter(f => { if (f.caught) { giveItem(f.type, 1); AudioSys.play('pickup'); return false; } return true; });
                 activeHook = null; 
             }
         }
     }
 
-    // Entity Culling: Eliminar objetos atrapados o demasiado lejos
-    floatingItems.forEach((f, index) => { 
-        if(!f.caught) f.x -= f.speed; 
-        if (Math.hypot(f.x - camera.x, f.y - camera.y) > 2000) floatingItems.splice(index, 1); 
-    });
+    floatingItems.forEach((f, index) => { if(!f.caught) f.x -= f.speed; if (Math.hypot(f.x - camera.x, f.y - camera.y) > 2000) floatingItems.splice(index, 1); });
     raftParticles.forEach((p, index) => { p.x += p.speed; p.life -= 0.015; if(p.life <= 0) raftParticles.splice(index, 1); });
     
-    // Entities
     entities.forEach(e => {
-        if(e.type === 'shark') {
-            e.angle += 0.01; e.targetX = Math.cos(e.angle)*250; e.targetY = Math.sin(e.angle)*250;
-            e.x += (e.targetX - e.x) * 0.02; e.y += (e.targetY - e.y) * 0.02;
-        }
+        if(e.type === 'shark') { e.angle += 0.01; e.targetX = Math.cos(e.angle)*250; e.targetY = Math.sin(e.angle)*250; e.x += (e.targetX - e.x) * 0.02; e.y += (e.targetY - e.y) * 0.02; }
     });
 
     let nearWork = false; let nearFurnace = false;
     structures.forEach(s => { let px = (s.c * tileSize) + tileSize/2; let py = (s.r * tileSize) + tileSize/2; if(Math.hypot(player.x - px, player.y - py) < tileSize * 1.5) { if(s.type === 'mesa_trabajo') nearWork = true; if(s.type === 'horno') nearFurnace = true; } });
     document.getElementById('btn-craft-work').style.display = nearWork ? 'flex' : 'none'; document.getElementById('btn-craft-furnace').style.display = nearFurnace ? 'flex' : 'none';
     
-    // Time & Weather
-    gameTime += 0.15; if(gameTime >= 24 * 60) { gameTime = 0; gameDay++; document.getElementById('ui-day').innerText = gameDay; logEvent("Día " + gameDay + "!", "event"); }
+    gameTime += 0.15; if(gameTime >= 24 * 60) { gameTime = 0; gameDay++; document.getElementById('ui-day').innerText = gameDay; }
     document.getElementById('ui-clock').innerText = `${Math.floor(gameTime / 60).toString().padStart(2,'0')}:${Math.floor(gameTime % 60).toString().padStart(2,'0')}`;
     
     if(Math.random() < 0.0005) { 
@@ -310,28 +274,17 @@ function draw() {
     
     ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
     
-    // Wave lines
     ctx.strokeStyle = `rgba(255,255,255,${weather.current === 'STORM' ? 0.15 : 0.05})`; ctx.lineWidth = 2;
     for(let i = -1000; i < 1000; i += 100) { ctx.beginPath(); for(let j = -1000; j < 1000; j += 50) ctx.lineTo(j, i + Math.sin((j + oceanPhase * 150)*0.01)*20); ctx.stroke(); }
     
-    // Rendering Islas Orgánicas
     islands.forEach(isl => {
-        ctx.fillStyle = '#fde047'; 
-        ctx.beginPath();
-        isl.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-        ctx.fill();
-        
-        ctx.fillStyle = '#4ade80'; 
-        ctx.beginPath();
-        isl.points.forEach((p, i) => {
-            let ix = isl.x + (p.x - isl.x) * 0.75;
-            let iy = isl.y + (p.y - isl.y) * 0.75;
-            i === 0 ? ctx.moveTo(ix, iy) : ctx.lineTo(ix, iy);
-        });
+        ctx.fillStyle = '#fde047'; ctx.beginPath();
+        isl.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.fill();
+        ctx.fillStyle = '#4ade80'; ctx.beginPath();
+        isl.points.forEach((p, i) => { let ix = isl.x + (p.x - isl.x) * 0.75; let iy = isl.y + (p.y - isl.y) * 0.75; i === 0 ? ctx.moveTo(ix, iy) : ctx.lineTo(ix, iy); });
         ctx.fill();
     });
 
-    // Items
     floatingItems.forEach(item => {
         let bob = Math.sin(oceanPhase * 2 + item.bobOffset) * (weather.current==='STORM'? 10: 5);
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(item.x, item.y + 10, item.size/2, 0, Math.PI*2); ctx.fill();
@@ -339,23 +292,16 @@ function draw() {
         if(img.complete) ctx.drawImage(img, item.x - item.size/2, item.y + bob - item.size/2, item.size, item.size);
     });
 
-    // Hook Render
     if(activeHook) {
         ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(activeHook.x, activeHook.y); ctx.stroke();
         let hBase = ITEMS_DB[activeHook.type]; let hImg = preRenderSVG(activeHook.type, hBase.svg, 30);
         if(hImg.complete) { ctx.save(); ctx.translate(activeHook.x, activeHook.y); ctx.rotate(Math.atan2(activeHook.y - player.y, activeHook.x - player.x)); ctx.drawImage(hImg, -15, -15, 30, 30); ctx.restore(); }
     }
 
-    // Entities (Sharks)
     entities.forEach(e => {
-        if(e.type === 'shark') {
-            ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.angle);
-            ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-20, 15); ctx.lineTo(-20, -15); ctx.fill(); 
-            ctx.restore();
-        }
+        if(e.type === 'shark') { ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.angle); ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-20, 15); ctx.lineTo(-20, -15); ctx.fill(); ctx.restore(); }
     });
 
-    // Raft Rendering
     let raftSwayX = Math.cos(oceanPhase) * 5; let raftSwayY = Math.sin(oceanPhase * 1.5) * 5; ctx.save(); ctx.translate(raftSwayX, raftSwayY);
     ctx.fillStyle = 'rgba(255,255,255,0.6)'; raftParticles.forEach(p => { ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 * p.life, 3 * p.life, 0, 0, Math.PI*2); ctx.fill(); });
     
@@ -369,30 +315,24 @@ function draw() {
         if(img.complete) ctx.drawImage(img, px + 10, py + 10, tileSize-20, tileSize-20); 
     });
 
-    // Build Preview
     let activeItem = hotbar[selectedSlot] ? inventory.find(i=>i.uid===hotbar[selectedSlot]) : null; let activeId = activeItem ? activeItem.id : null;
     let localX = mouseWorldX - raftSwayX; let localY = mouseWorldY - raftSwayY; let hoverC = Math.floor(localX / tileSize); let hoverR = Math.floor(localY / tileSize); let hoverKey = `${hoverR},${hoverC}`;
     let onIsland = islands.some(isl => Math.hypot(isl.x - localX, isl.y - localY) < isl.radius * 0.85);
     
     if (ITEMS_DB[activeId] && ITEMS_DB[activeId].cat === 'est') {
-        let px = hoverC * tileSize; let py = hoverR * tileSize;
-        let canBuild = false;
+        let px = hoverC * tileSize; let py = hoverR * tileSize; let canBuild = false;
         if(ITEMS_DB[activeId].buildType === 'floor') canBuild = !raftTiles.includes(hoverKey) && !onIsland && raftTiles.some(t => { let [r,c] = t.split(',').map(Number); return Math.abs(r-hoverR) + Math.abs(c-hoverC) === 1; });
         if(ITEMS_DB[activeId].buildType === 'prop') canBuild = raftTiles.includes(hoverKey) && !structures.find(s => s.r === hoverR && s.c === hoverC);
         ctx.fillStyle = canBuild ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)'; ctx.fillRect(px, py, tileSize, tileSize);
     } else if (activeId === 'martillo') {
         let px = hoverC * tileSize; let py = hoverR * tileSize;
-        if(structures.find(s => s.r === hoverR && s.c === hoverC) || raftTiles.includes(hoverKey)) {
-            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+tileSize,py+tileSize); ctx.moveTo(px+tileSize,py); ctx.lineTo(px,py+tileSize); ctx.stroke();
-        }
+        if(structures.find(s => s.r === hoverR && s.c === hoverC) || raftTiles.includes(hoverKey)) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+tileSize,py+tileSize); ctx.moveTo(px+tileSize,py); ctx.lineTo(px,py+tileSize); ctx.stroke(); }
     }
 
-    // Player
     if (player.isMoving) { ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.targetX, player.targetY); ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.setLineDash([8, 8]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = 'rgba(245, 158, 11, 0.8)'; ctx.beginPath(); ctx.arc(player.targetX, player.targetY, 6, 0, Math.PI * 2); ctx.fill(); }
     ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.arc(player.x, player.y + 15, 18, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = player.color; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Nunito'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(player.icon, player.x, player.y); 
     ctx.restore(); ctx.restore();
     
-    // Overlays (Night & Fog)
     let hour = gameTime / 60; let darkness = hour < 5 || hour >= 20 ? 0.6 : (hour >= 5 && hour < 7 ? 0.6 - ((hour - 5) / 2) * 0.6 : (hour >= 18 && hour < 20 ? ((hour - 18) / 2) * 0.6 : 0)); 
     if (darkness > 0 || weather.fogDensity > 0 || weather.current === 'STORM') { 
         let dVal = Math.min(0.8, darkness + (weather.current === 'STORM' ? 0.3 : 0));
