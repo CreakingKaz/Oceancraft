@@ -3,130 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Oceancraft</title>
+    <title>Oceancraft - Adventure Update</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <div id="loading-screen" class="ui-layer" style="background: #0f172a; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 class="game-title" style="font-size: 4rem;">OCEANCRAFT</h1>
+        <div style="width: 300px; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; margin-top: 20px;">
+            <div id="loading-bar" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.2s;"></div>
+        </div>
+    </div>
 
-    <!-- MENÚ DE INICIO -->
-    <div id="main-menu" class="ui-layer">
-        <h1 class="ocean-title">Oceancraft</h1>
-        <div class="menu-box">
-            <h3>Nueva Partida</h3>
-            <input type="text" id="player-icon" class="input-field" placeholder="Tu icono (Ej: Kaz)" maxlength="3">
-            <input type="color" id="player-color" class="color-picker" value="#e74c3c">
-            
-            <select id="diff-select" class="input-field" style="margin-top:5px;">
-                <option value="0.5">Fácil</option>
-                <option value="1" selected>Normal</option>
-                <option value="1.5">Difícil</option>
-            </select>
-            
-            <div style="display: flex; gap: 5px; margin-top: 10px;">
-                <button class="btn" onclick="startGame(1, true)">Crear Slot 1</button>
-                <button class="btn" onclick="startGame(2, true)">Crear Slot 2</button>
+    <!-- Menú Principal Rework -->
+    <div id="main-menu" class="ui-layer hidden" style="z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 class="game-title" style="font-size: 5rem; margin-bottom: 40px; text-shadow: 0 10px 30px rgba(56, 189, 248, 0.5);">Oceancraft</h1>
+        <div class="glass" style="display: flex; flex-direction: row; width: 800px; height: 500px; padding: 0;">
+            <div style="width: 250px; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1);">
+                <button class="menu-tab active" onclick="switchMenuTab('new-game')">Nuevo Juego</button>
+                <button class="menu-tab" onclick="switchMenuTab('continue')">Continuar</button>
+                <button class="menu-tab" onclick="switchMenuTab('cosmetics')">Cosméticos</button>
             </div>
             
-            <h3 style="margin-top: 15px;">Continuar</h3>
-            <div style="display: flex; gap: 5px;">
-                <button class="btn" style="background:#0984e3;" onclick="startGame(1, false)">Cargar Slot 1</button>
-                <button class="btn" style="background:#0984e3;" onclick="startGame(2, false)">Cargar Slot 2</button>
+            <div id="tab-new-game" class="menu-content" style="flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 20px;">
+                <h2>Crear Mundo</h2>
+                <input type="text" id="world-name" class="input-field" placeholder="Nombre del Mundo" value="Mundo 1">
+                <select id="difficulty-select" class="input-field">
+                    <option value="peaceful">Pacífico (Sin tiburón, menos hambre)</option>
+                    <option value="normal" selected>Normal (Experiencia balanceada)</option>
+                    <option value="hard">Difícil (Supervivencia extrema)</option>
+                </select>
+                <select id="density-select" class="input-field">
+                    <option value="low">Pocas Islas/Barcos</option>
+                    <option value="normal" selected>Generación Estándar</option>
+                    <option value="high">Mundo Archipiélago</option>
+                </select>
+                <button class="btn btn-primary" style="margin-top: auto;" onclick="startNewGame()">Comenzar Aventura</button>
+            </div>
+
+            <div id="tab-continue" class="menu-content hidden" style="flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 15px;">
+                <h2>Partidas Guardadas</h2>
+                <div id="save-slots-container" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; flex:1;"></div>
+            </div>
+
+            <div id="tab-cosmetics" class="menu-content hidden" style="flex: 1; padding: 0; display: flex; flex-direction: row;">
+                <div style="flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid rgba(255,255,255,0.1);">
+                    <h2>Apariencia</h2>
+                    <div><label>Nombre:</label><input type="text" id="player-icon" class="input-field" value="Kaz" maxlength="3" oninput="updateCosmeticPreview()"></div>
+                    <div><label>Color Principal:</label><input type="color" id="player-color" class="color-picker" style="width:100%; height:40px;" value="#ff4757" oninput="updateCosmeticPreview()"></div>
+                    <div><label>Color Texto:</label><select id="text-color-mode" class="input-field" onchange="updateCosmeticPreview()"><option value="auto">Automático</option><option value="#ffffff">Blanco</option><option value="#000000">Negro</option></select></div>
+                </div>
+                <div style="width: 250px; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.2);">
+                    <div id="preview-player" style="width: 100px; height: 100px; border-radius: 50%; background: #ff4757; display: flex; justify-content: center; align-items: center; border: 4px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <span id="preview-text" style="color: white; font-weight: 900; font-size: 2rem;">Kaz</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- INTERFAZ DEL JUEGO (HUD) -->
+    <!-- UI Juego -->
     <div id="game-ui" class="ui-layer hidden">
-        
-        <!-- Stats Top Left -->
-        <div id="stats-hud" class="hud-box">
-            <div id="ui-clock" style="color: #f1c40f; font-weight: bold; border-bottom: 1px solid #555; margin-bottom: 5px;">Día 1 - 08:00</div>
-            <div><span style="color:#e74c3c">♥</span> Hambre: <span id="ui-hp">100</span>%</div>
-            <div><span style="color:#3498db">▤</span> Sed: <span id="ui-thirst">100</span>%</div>
-            <div><span style="color:#f1c40f">☀</span> Sueño: <span id="ui-sleep">100</span>%</div>
+        <!-- Stats Panel -->
+        <div id="stats-history-panel" class="glass">
+            <div class="time-header">Día <span id="ui-day">1</span> - <span id="ui-clock">08:00</span></div>
+            <div class="stats-container">
+                <div class="stat-row"><span class="stat-icon" style="color:#ff4757;">VIDA</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hp" style="width: 100%; background: #ff4757;"></div></div></div>
+                <div class="stat-row"><span class="stat-icon" style="color:#f1c40f;">ENRG</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-energy" style="width: 100%; background: #f1c40f;"></div></div></div>
+                <div class="stat-row"><span class="stat-icon" style="color:#1e90ff;">AGUA</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-thirst" style="width: 100%; background: #1e90ff;"></div></div></div>
+                <div class="stat-row"><span class="stat-icon" style="color:#eab308;">CMDA</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hunger" style="width: 100%; background: #eab308;"></div></div></div>
+            </div>
+            <div class="history-log" id="history-log"></div>
         </div>
 
-        <!-- Botones Laterales Derechos (Menús) -->
-        <div id="side-menus">
-            <button class="btn-icon" onclick="toggleMenu('inventory-modal')">🎒</button>
-            <button class="btn-icon" onclick="toggleMenu('craft-modal')">⚒</button>
-            <button class="btn-icon" onclick="toggleMenu('settings-modal')">⚙</button>
-        </div>
-
-        <!-- Controles Inferiores (Zoom, Hotbar y Acción) -->
-        <div id="bottom-controls">
-            <!-- Zoom centrado encima de la hotbar -->
-            <div id="zoom-controls">
-                <button class="btn-small" onclick="zoomIn()">Zoom +</button>
-                <button class="btn-small" onclick="zoomOut()">Zoom -</button>
+        <div id="bottom-hud">
+            <div id="contextual-crafting" style="display:flex; gap:10px; flex-direction:column; justify-content:flex-end;">
+                <button class="btn-text context-btn glass" id="btn-craft-furnace" style="display:none; background: rgba(239, 68, 68, 0.3);" onclick="openCrafting('horno')">Horno</button>
+                <button class="btn-text context-btn glass" id="btn-craft-work" style="display:none; background: rgba(245, 158, 11, 0.3);" onclick="openCrafting('mesa_trabajo')">Mesa</button>
+                <button class="btn-text context-btn glass" id="btn-craft-basic" onclick="openCrafting('basic')">Básico</button>
             </div>
             
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="hotbar glass">
                 <div class="hotbar-slot selected" id="slot-0" onclick="selectSlot(0)"></div>
                 <div class="hotbar-slot" id="slot-1" onclick="selectSlot(1)"></div>
                 <div class="hotbar-slot" id="slot-2" onclick="selectSlot(2)"></div>
-                <button class="btn" id="action-btn" onclick="doAction()" style="padding: 15px; font-size: 16px;">Buscar</button>
             </div>
+            
+            <button class="btn btn-action glass" id="action-btn" onclick="doPrimaryAction()">Interactuar</button>
+            <button class="btn-text glass" style="width: 70px; height: 70px; margin-left: 10px;" onclick="toggleMenu('inventory-modal')">INV</button>
         </div>
-        
         <div id="notifications"></div>
     </div>
 
-    <!-- MODAL INVENTARIO -->
-    <div id="inventory-modal" class="modal hidden">
-        <div class="modal-header">
-            <h2>Inventario (<span id="inv-count">0</span>/30)</h2>
-            <button class="btn-close" onclick="toggleMenu('inventory-modal')">X</button>
-        </div>
-        <div class="tabs">
-            <div class="tab active" onclick="setInvTab('todo')">Todo</div>
-            <div class="tab" onclick="setInvTab('mat')">▤ Materiales</div>
-            <div class="tab" onclick="setInvTab('herr')">⚒ Herramientas</div>
-            <div class="tab" onclick="setInvTab('com')">♨ Comida</div>
-        </div>
-        <div id="inv-grid" class="grid-content"></div>
-        <div class="lore-box">
-            <p id="lore-text">Selecciona un ítem.</p>
-            <div id="lore-actions"></div>
-        </div>
-    </div>
-
-    <!-- MODAL CRAFTEO -->
-    <div id="craft-modal" class="modal hidden">
-        <div class="modal-header">
-            <h2>Construcción</h2>
-            <button class="btn-close" onclick="toggleMenu('craft-modal')">X</button>
-        </div>
-        <div class="tabs">
-            <div class="tab active" onclick="setCraftTab('todo')">Todo</div>
-            <div class="tab" onclick="setCraftTab('herr')">⚒ Herramientas</div>
-            <div class="tab" onclick="setCraftTab('est')">⌂ Estructuras</div>
-        </div>
-        <div id="craft-list" class="list-content"></div>
-        <div class="lore-box">
-            <p id="craft-lore-text">Selecciona una receta.</p>
-            <div id="craft-actions"></div>
+    <!-- Inventory Modal -->
+    <div id="inventory-modal" class="modal-wrapper hidden">
+        <div class="modal glass">
+            <div class="modal-header">
+                <h2>Inventario (<span id="inv-count">0</span>/15)</h2>
+                <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('inventory-modal')">X</button>
+            </div>
+            <div style="display: flex; flex: 1; overflow: hidden;">
+                <div style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1);">
+                    <div id="inv-grid" class="inventory-grid" style="grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));"></div>
+                </div>
+                <div style="width: 300px; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; padding: 20px;">
+                    <div id="lore-box-content" style="flex:1;">
+                        <p style="color:#94a3b8; text-align:center; margin-top:50%;">Selecciona un ítem</p>
+                    </div>
+                    <div id="lore-actions" style="display:flex; flex-direction:column; gap:10px; margin-top:20px; display:none;">
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn btn-text" style="flex:1; padding:10px;" onclick="equipToHotbar(0)">Eq 1</button>
+                            <button class="btn btn-text" style="flex:1; padding:10px;" onclick="equipToHotbar(1)">Eq 2</button>
+                            <button class="btn btn-text" style="flex:1; padding:10px;" onclick="equipToHotbar(2)">Eq 3</button>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn btn-text" style="flex:1; background:rgba(245, 158, 11, 0.2); color:#f59e0b;" onclick="toggleFavorite()">★ Fav</button>
+                            <button class="btn btn-text" style="flex:1; background:rgba(239, 68, 68, 0.2); color:#ef4444;" onclick="dropSelectedItem()">Tirar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL AJUSTES (Aquí va la transparencia y guardado) -->
-    <div id="settings-modal" class="modal hidden">
-        <div class="modal-header">
-            <h2>Opciones</h2>
-            <button class="btn-close" onclick="toggleMenu('settings-modal')">X</button>
-        </div>
-        <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px; color: white;">
-            <label>Transparencia de Menús:</label>
-            <input type="range" id="opacity-slider" min="0.3" max="1" step="0.1" value="0.9" onchange="updateOpacity()">
-            <hr style="border-color: #555;">
-            <button class="btn" style="background: #27ae60;" onclick="saveGame()">Guardar Partida</button>
-            <button class="btn" style="background: #e74c3c;" onclick="location.reload()">Salir al Menú</button>
+    <!-- Crafting Modal -->
+    <div id="craft-modal" class="modal-wrapper hidden">
+        <div class="modal glass">
+            <div class="modal-header" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="craft-title">Menú de Crafteo</h2>
+                    <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('craft-modal')">X</button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="craft-search" class="input-field" placeholder="Buscar receta..." oninput="renderCrafting(currentStation)" style="flex:1;">
+                    <label style="display:flex; align-items:center; gap:5px; color:white; cursor:pointer;">
+                        <input type="checkbox" id="craft-available-only" onchange="renderCrafting(currentStation)"> Solo Crafteables
+                    </label>
+                </div>
+            </div>
+            <div class="tabs" id="craft-tabs">
+                <div class="tab active" onclick="setCraftTab('todo', this)">Todo</div>
+                <div class="tab" onclick="setCraftTab('mat', this)">Materiales</div>
+                <div class="tab" onclick="setCraftTab('herr', this)">Herramientas</div>
+                <div class="tab" onclick="setCraftTab('est', this)">Construcción</div>
+            </div>
+            <div class="inventory-grid" id="craft-grid" style="grid-template-columns: 1fr; gap: 10px;"></div>
         </div>
     </div>
 
-    <!-- CANVAS MOTOR GRÁFICO -->
     <canvas id="gameCanvas"></canvas>
-
+    
+    <script src="js/audio.js"></script>
     <script src="js/items.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/engine.js"></script>
