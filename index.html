@@ -3,68 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Oceancraft - Adventure Update</title>
+    <title>Oceancraft - Adventure Prep</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <!-- Pantalla de Carga -->
     <div id="loading-screen" class="ui-layer" style="background: #0f172a; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        <h1 class="game-title" style="font-size: 4rem;">OCEANCRAFT</h1>
-        <div style="width: 300px; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; margin-top: 20px;">
-            <div id="loading-bar" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.2s;"></div>
+        <h1 class="game-title" style="font-size: 3rem; margin-bottom: 20px;">OCEANCRAFT</h1>
+        <div style="width: 300px; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden;">
+            <div id="loading-bar" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.1s;"></div>
         </div>
+        <p id="loading-text" style="color: #94a3b8; margin-top: 10px; font-weight: bold;">Cargando mundo...</p>
     </div>
 
-    <!-- Menú Principal Rework -->
-    <div id="main-menu" class="ui-layer hidden" style="z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        <h1 class="game-title" style="font-size: 5rem; margin-bottom: 40px; text-shadow: 0 10px 30px rgba(56, 189, 248, 0.5);">Oceancraft</h1>
-        <div class="glass" style="display: flex; flex-direction: row; width: 800px; height: 500px; padding: 0;">
-            <div style="width: 250px; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1);">
-                <button class="menu-tab active" onclick="switchMenuTab('new-game')">Nuevo Juego</button>
-                <button class="menu-tab" onclick="switchMenuTab('continue')">Continuar</button>
-                <button class="menu-tab" onclick="switchMenuTab('cosmetics')">Cosméticos</button>
-            </div>
+    <!-- Menú Principal -->
+    <div id="main-menu" class="ui-layer hidden" style="z-index: 1000;">
+        <div class="menu-box glass" style="width: 500px;">
+            <h1 class="game-title">Oceancraft</h1>
+            <p style="color: #94a3b8; font-weight: bold;">Adventure & Combat Prep</p>
             
-            <div id="tab-new-game" class="menu-content" style="flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 20px;">
-                <h2>Crear Mundo</h2>
-                <input type="text" id="world-name" class="input-field" placeholder="Nombre del Mundo" value="Mundo 1">
-                <select id="difficulty-select" class="input-field">
-                    <option value="peaceful">Pacífico (Sin tiburón, menos hambre)</option>
-                    <option value="normal" selected>Normal (Experiencia balanceada)</option>
-                    <option value="hard">Difícil (Supervivencia extrema)</option>
-                </select>
-                <select id="density-select" class="input-field">
-                    <option value="low">Pocas Islas/Barcos</option>
-                    <option value="normal" selected>Generación Estándar</option>
-                    <option value="high">Mundo Archipiélago</option>
-                </select>
-                <button class="btn btn-primary" style="margin-top: auto;" onclick="startNewGame()">Comenzar Aventura</button>
+            <div style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
+                <input type="text" id="player-icon" class="input-field" placeholder="Tu icono (Ej: Kaz)" maxlength="3" style="flex: 1;">
+                <input type="color" id="player-color" class="color-picker" value="#ff4757">
             </div>
 
-            <div id="tab-continue" class="menu-content hidden" style="flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 15px;">
-                <h2>Partidas Guardadas</h2>
-                <div id="save-slots-container" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; flex:1;"></div>
-            </div>
+            <select id="difficulty-select" class="input-field" style="width: 100%; cursor: pointer;">
+                <option value="peaceful">Pacífico (Sin enemigos, menos hambre)</option>
+                <option value="normal" selected>Normal (Experiencia estándar)</option>
+                <option value="hard">Difícil (Más daño, tormentas frecuentes)</option>
+            </select>
 
-            <div id="tab-cosmetics" class="menu-content hidden" style="flex: 1; padding: 0; display: flex; flex-direction: row;">
-                <div style="flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid rgba(255,255,255,0.1);">
-                    <h2>Apariencia</h2>
-                    <div><label>Nombre:</label><input type="text" id="player-icon" class="input-field" value="Kaz" maxlength="3" oninput="updateCosmeticPreview()"></div>
-                    <div><label>Color Principal:</label><input type="color" id="player-color" class="color-picker" style="width:100%; height:40px;" value="#ff4757" oninput="updateCosmeticPreview()"></div>
-                    <div><label>Color Texto:</label><select id="text-color-mode" class="input-field" onchange="updateCosmeticPreview()"><option value="auto">Automático</option><option value="#ffffff">Blanco</option><option value="#000000">Negro</option></select></div>
-                </div>
-                <div style="width: 250px; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.2);">
-                    <div id="preview-player" style="width: 100px; height: 100px; border-radius: 50%; background: #ff4757; display: flex; justify-content: center; align-items: center; border: 4px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                        <span id="preview-text" style="color: white; font-weight: 900; font-size: 2rem;">Kaz</span>
-                    </div>
-                </div>
+            <div class="save-slots" style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-text" onclick="loadGameSlot(1)" id="slot-1">Slot 1: Vacío</button>
+                <button class="btn btn-text" onclick="loadGameSlot(2)" id="slot-2">Slot 2: Vacío</button>
+                <button class="btn btn-text" onclick="loadGameSlot(3)" id="slot-3">Slot 3: Vacío</button>
             </div>
         </div>
     </div>
 
-    <!-- UI Juego -->
+    <!-- Pantalla de Muerte -->
+    <div id="death-screen" class="ui-layer hidden" style="background: rgba(153, 27, 27, 0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 style="color: #fca5a5; font-size: 4rem; font-weight: 900; text-transform: uppercase; letter-spacing: 5px;">Has Muerto</h1>
+        <div class="glass" style="padding: 30px; margin-top: 20px; text-align: center; min-width: 300px;">
+            <h2 id="death-cause" style="color: white; margin-bottom: 20px;">El océano no perdona.</h2>
+            <p style="color: #cbd5e1; font-size: 1.2rem; margin-bottom: 5px;">Días sobrevividos: <span id="death-days" style="color: #f59e0b; font-weight: bold;">0</span></p>
+            <p style="color: #cbd5e1; font-size: 1.2rem; margin-bottom: 20px;">Ítems recolectados: <span id="death-items" style="color: #38bdf8; font-weight: bold;">0</span></p>
+            <button class="btn btn-primary" onclick="location.reload()">Volver al Menú</button>
+        </div>
+    </div>
+
     <div id="game-ui" class="ui-layer hidden">
-        <!-- Stats Panel -->
         <div id="stats-history-panel" class="glass">
             <div class="time-header">Día <span id="ui-day">1</span> - <span id="ui-clock">08:00</span></div>
             <div class="stats-container">
@@ -72,8 +61,20 @@
                 <div class="stat-row"><span class="stat-icon" style="color:#f1c40f;">ENRG</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-energy" style="width: 100%; background: #f1c40f;"></div></div></div>
                 <div class="stat-row"><span class="stat-icon" style="color:#1e90ff;">AGUA</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-thirst" style="width: 100%; background: #1e90ff;"></div></div></div>
                 <div class="stat-row"><span class="stat-icon" style="color:#eab308;">CMDA</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hunger" style="width: 100%; background: #eab308;"></div></div></div>
+                <div class="stat-row"><span class="stat-icon" style="color:#2ecc71;">TOXI</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-tox" style="width: 100%; background: #2ecc71;"></div></div></div>
             </div>
             <div class="history-log" id="history-log"></div>
+        </div>
+
+        <div id="side-hud" class="glass" style="top: 20px; right: 20px;">
+            <button class="btn-text" style="width:50px; height:50px;" onclick="saveCurrentGame()">GDR</button>
+            <button class="btn-text" style="width:50px; height:50px;" onclick="toggleMenu('options-modal')">OPC</button>
+        </div>
+
+        <div id="zoom-controls" class="glass">
+            <button class="btn-text btn-glass" style="width:30px; height:30px;" onclick="zoomOut()">-</button>
+            <span style="font-weight: bold; font-size: 14px; color: white;">Cámara</span>
+            <button class="btn-text btn-glass" style="width:30px; height:30px;" onclick="zoomIn()">+</button>
         </div>
 
         <div id="bottom-hud">
@@ -95,51 +96,38 @@
         <div id="notifications"></div>
     </div>
 
-    <!-- Inventory Modal -->
     <div id="inventory-modal" class="modal-wrapper hidden">
         <div class="modal glass">
             <div class="modal-header">
-                <h2>Inventario (<span id="inv-count">0</span>/15)</h2>
+                <h2>Inventario (<span id="inv-count">0</span>/50)</h2>
+                <select id="inv-filter" onchange="renderInventory()" class="filter-select">
+                    <option value="recent">Más Recientes</option>
+                    <option value="qty">Mayor Cantidad</option>
+                    <option value="az">A - Z</option>
+                </select>
                 <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('inventory-modal')">X</button>
             </div>
-            <div style="display: flex; flex: 1; overflow: hidden;">
-                <div style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1);">
-                    <div id="inv-grid" class="inventory-grid" style="grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));"></div>
-                </div>
-                <div style="width: 300px; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; padding: 20px;">
-                    <div id="lore-box-content" style="flex:1;">
-                        <p style="color:#94a3b8; text-align:center; margin-top:50%;">Selecciona un ítem</p>
-                    </div>
-                    <div id="lore-actions" style="display:flex; flex-direction:column; gap:10px; margin-top:20px; display:none;">
-                        <div style="display:flex; gap:5px;">
-                            <button class="btn btn-text" style="flex:1; padding:10px;" onclick="equipToHotbar(0)">Eq 1</button>
-                            <button class="btn btn-text" style="flex:1; padding:10px;" onclick="equipToHotbar(1)">Eq 2</button>
-                            <button class="btn btn-text" style="flex:1; padding:10px;" onclick="equipToHotbar(2)">Eq 3</button>
-                        </div>
-                        <div style="display:flex; gap:5px;">
-                            <button class="btn btn-text" style="flex:1; background:rgba(245, 158, 11, 0.2); color:#f59e0b;" onclick="toggleFavorite()">★ Fav</button>
-                            <button class="btn btn-text" style="flex:1; background:rgba(239, 68, 68, 0.2); color:#ef4444;" onclick="dropSelectedItem()">Tirar</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="tabs">
+                <div class="tab active" onclick="setInvTab('todo', this)">Todo</div>
+                <div class="tab" onclick="setInvTab('mat', this)">Materiales</div>
+                <div class="tab" onclick="setInvTab('com', this)">Consumibles</div>
+                <div class="tab" onclick="setInvTab('herr', this)">Equipables</div>
+                <div class="tab" onclick="setInvTab('est', this)">Estructuras</div>
             </div>
+            <div id="inv-grid" class="inventory-grid"></div>
+            <div id="lore-box" class="lore-box"><p id="lore-text" style="color: #ccc;">Selecciona un ítem.</p><div id="lore-actions" class="lore-actions"></div></div>
         </div>
     </div>
 
-    <!-- Crafting Modal -->
     <div id="craft-modal" class="modal-wrapper hidden">
         <div class="modal glass">
-            <div class="modal-header" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 id="craft-title">Menú de Crafteo</h2>
-                    <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('craft-modal')">X</button>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="craft-search" class="input-field" placeholder="Buscar receta..." oninput="renderCrafting(currentStation)" style="flex:1;">
-                    <label style="display:flex; align-items:center; gap:5px; color:white; cursor:pointer;">
-                        <input type="checkbox" id="craft-available-only" onchange="renderCrafting(currentStation)"> Solo Crafteables
-                    </label>
-                </div>
+            <div class="modal-header">
+                <h2 id="craft-title">Menú de Crafteo</h2>
+                <select id="craft-filter" onchange="renderCrafting(currentStation)" class="filter-select">
+                    <option value="craftable">Crafteables Primero</option>
+                    <option value="all">Mostrar Todos</option>
+                </select>
+                <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('craft-modal')">X</button>
             </div>
             <div class="tabs" id="craft-tabs">
                 <div class="tab active" onclick="setCraftTab('todo', this)">Todo</div>
@@ -148,6 +136,23 @@
                 <div class="tab" onclick="setCraftTab('est', this)">Construcción</div>
             </div>
             <div class="inventory-grid" id="craft-grid" style="grid-template-columns: 1fr; gap: 10px;"></div>
+        </div>
+    </div>
+    
+    <div id="options-modal" class="modal-wrapper hidden">
+        <div class="modal glass" style="max-height: 400px;">
+            <div class="modal-header"><h2>Ajustes</h2><button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('options-modal')">X</button></div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="font-weight: bold; color: white;">Opacidad de Interfaz</label>
+                    <input type="range" style="width: 100%; margin-top: 5px;" id="opacity-slider" min="0.3" max="1" step="0.1" value="0.9" onchange="updateUIOpacity()">
+                </div>
+                <div>
+                    <label style="font-weight: bold; color: white;">Tamaño de Interfaz (HUD)</label>
+                    <input type="range" style="width: 100%; margin-top: 5px;" id="scale-slider" min="0.6" max="1.3" step="0.1" value="1" onchange="updateUIScale()">
+                </div>
+                <button class="btn" style="background: #ef4444; margin-top: 20px;" onclick="location.reload()">Abandonar Partida</button>
+            </div>
         </div>
     </div>
 
