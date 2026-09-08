@@ -15,26 +15,64 @@
         </div>
         <p id="loading-text" style="color: #94a3b8; margin-top: 10px; font-weight: bold;">Cargando mundo...</p>
     </div>
-    <div id="main-menu" class="ui-layer hidden" style="z-index: 1000;">
-        <div class="menu-box glass" style="width: 500px;">
+    <div id="main-menu" class="ui-layer hidden" style="z-index: 1000; display: flex; justify-content: center; align-items: center; background: transparent;">
+        <!-- Pantalla de Inicio -->
+        <div class="menu-box glass" id="menu-home" style="width: 400px;">
             <h1 class="game-title">Oceancraft</h1>
-            <p style="color: #94a3b8; font-weight: bold;">Adventure & Combat Prep</p>
-            <div style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
-                <input type="text" id="player-icon" class="input-field" placeholder="Tu icono (Ej: Kaz)" maxlength="3" style="flex: 1;">
-                <input type="color" id="player-color" class="color-picker" value="#ff4757">
-            </div>
-            <select id="difficulty-select" class="input-field" style="width: 100%; cursor: pointer;">
+            <p style="color: #94a3b8; font-weight: bold; margin-bottom: 25px;">Adventure Update</p>
+            <button class="btn btn-primary" style="margin-bottom: 12px; font-size: 18px;" onclick="switchMenu('menu-new')">Nuevo Juego</button>
+            <button class="btn btn-primary" style="margin-bottom: 12px; font-size: 18px;" onclick="switchMenu('menu-load')">Continuar</button>
+            <button class="btn btn-primary" style="font-size: 18px; background: #6366f1;" onclick="switchMenu('menu-cosmetics')">Cosméticos</button>
+        </div>
+
+        <!-- Pantalla Nuevo Juego -->
+        <div class="menu-box glass hidden" id="menu-new" style="width: 500px;">
+            <h2 style="margin-bottom: 20px; color: white;">Crear Nuevo Mundo</h2>
+            <input type="text" id="world-name" class="input-field" placeholder="Nombre del mundo (opcional)" style="margin-bottom: 15px;">
+            <select id="difficulty-select" class="input-field" style="margin-bottom: 25px; cursor: pointer;">
                 <option value="peaceful">Pacífico (Sin enemigos, menos hambre)</option>
                 <option value="normal" selected>Normal (Experiencia estándar)</option>
                 <option value="hard">Difícil (Más daño, tormentas frecuentes)</option>
             </select>
-            <div class="save-slots" style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-                <button class="btn btn-text" onclick="loadGameSlot(1)" id="slot-1">Slot 1: Vacío</button>
-                <button class="btn btn-text" onclick="loadGameSlot(2)" id="slot-2">Slot 2: Vacío</button>
-                <button class="btn btn-text" onclick="loadGameSlot(3)" id="slot-3">Slot 3: Vacío</button>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="btn" style="flex: 1; background: #475569;" onclick="switchMenu('menu-home')">Volver</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="startNewGame()">Crear</button>
             </div>
         </div>
-    </div>
+
+        <!-- Pantalla Continuar -->
+        <div class="menu-box glass hidden" id="menu-load" style="width: 550px;">
+            <h2 style="margin-bottom: 20px; color: white;">Seleccionar Partida</h2>
+            <div id="save-slots-container" style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+                <!-- Generado por JS -->
+            </div>
+            <button class="btn" style="width: 100%; background: #475569;" onclick="switchMenu('menu-home')">Volver</button>
+        </div>
+
+        <!-- Pantalla Cosméticos -->
+        <div class="menu-box glass hidden" id="menu-cosmetics" style="width: 650px; display: flex; flex-direction: row; gap: 20px; text-align: left;">
+            <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 20px;">
+                <h2 style="margin-bottom: 20px; color: white;">Apariencia</h2>
+                <label style="color: #94a3b8; font-weight: bold;">Nombre (Max 3)</label>
+                <input type="text" id="player-icon" class="input-field" placeholder="Ej: Kaz" maxlength="3" value="Kaz" style="margin-bottom: 15px; text-align: left;" oninput="updatePreview()">
+                
+                <label style="color: #94a3b8; font-weight: bold;">Color Principal</label>
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <input type="color" id="player-color" class="color-picker" value="#ff4757" oninput="updatePreview()">
+                    <span id="hex-display" style="color: white; font-family: monospace;">#ff4757</span>
+                </div>
+                
+                <p style="color: #64748b; font-size: 12px; margin-bottom: 20px;">El contraste del texto (oscuro/claro) se ajusta automáticamente según la luminosidad del color elegido.</p>
+                
+                <button class="btn" style="width: 100%; background: #475569;" onclick="switchMenu('menu-home')">Guardar</button>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.3); border-radius: 12px;">
+                <h3 style="color: #64748b; margin-bottom: 30px;">Vista Previa</h3>
+                <div id="preview-player" style="width: 120px; height: 120px; border-radius: 50%; background: #ff4757; display: flex; justify-content: center; align-items: center; border: 4px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: background 0.2s;">
+                    <span id="preview-text" style="color: white; font-weight: 900; font-size: 40px; transition: color 0.2s;">Kaz</span>
+                </div>
+            </div>
+        </div>
     <div id="death-screen" class="ui-layer hidden" style="background: rgba(153, 27, 27, 0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <h1 style="color: #fca5a5; font-size: 4rem; font-weight: 900; text-transform: uppercase; letter-spacing: 5px;">Has Muerto</h1>
         <div class="glass" style="padding: 30px; margin-top: 20px; text-align: center; min-width: 300px;">
@@ -81,10 +119,14 @@
         </div>
         <div id="notifications"></div>
     </div>
+<!-- Menú de Inventario Reworked -->
     <div id="inventory-modal" class="modal-wrapper hidden">
         <div class="modal glass">
             <div class="modal-header">
-                <h2>Inventario (<span id="inv-count">0</span>/50)</h2>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <h2>Inventario (<span id="inv-count">0</span>/15)</h2>
+                    <input type="text" id="inv-search" class="input-field" placeholder="Buscar por nombre..." style="padding: 8px; font-size: 14px; background: rgba(0,0,0,0.6);" oninput="renderInventory()">
+                </div>
                 <select id="inv-filter" onchange="renderInventory()" class="filter-select">
                     <option value="recent">Más Recientes</option>
                     <option value="qty">Mayor Cantidad</option>
@@ -96,22 +138,32 @@
                 <div class="tab active" onclick="setInvTab('todo', this)">Todo</div>
                 <div class="tab" onclick="setInvTab('mat', this)">Materiales</div>
                 <div class="tab" onclick="setInvTab('com', this)">Consumibles</div>
-                <div class="tab" onclick="setInvTab('herr', this)">Equipables</div>
+                <div class="tab" onclick="setInvTab('herr', this)">Equipos</div>
                 <div class="tab" onclick="setInvTab('est', this)">Estructuras</div>
             </div>
             <div id="inv-grid" class="inventory-grid"></div>
-            <div id="lore-box" class="lore-box"><p id="lore-text" style="color: #ccc;">Selecciona un ítem.</p><div id="lore-actions" class="lore-actions"></div></div>
+            <div id="lore-box" class="lore-box">
+                <p id="lore-text" style="color: #ccc;">Selecciona un ítem para inspeccionar.</p>
+                <div id="lore-actions" class="lore-actions"></div>
+            </div>
         </div>
     </div>
+
+    <!-- Menú de Crafteo Reworked -->
     <div id="craft-modal" class="modal-wrapper hidden">
         <div class="modal glass">
             <div class="modal-header">
-                <h2 id="craft-title">Menú de Crafteo</h2>
-                <select id="craft-filter" onchange="renderCrafting(currentStation)" class="filter-select">
-                    <option value="craftable">Crafteables Primero</option>
-                    <option value="all">Mostrar Todos</option>
-                </select>
-                <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('craft-modal')">X</button>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <h2 id="craft-title">Menú de Crafteo</h2>
+                    <input type="text" id="craft-search" class="input-field" placeholder="Buscar receta..." style="padding: 8px; font-size: 14px; background: rgba(0,0,0,0.6);" oninput="renderCrafting(currentStation)">
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+                    <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('craft-modal')">X</button>
+                    <label style="color: #a7f3d0; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="craft-toggle-afford" onchange="renderCrafting(currentStation)">
+                        Solo Crafteables
+                    </label>
+                </div>
             </div>
             <div class="tabs" id="craft-tabs">
                 <div class="tab active" onclick="setCraftTab('todo', this)">Todo</div>

@@ -78,3 +78,15 @@ canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0
 ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+
+.fav-badge {
+    position: absolute; top: -5px; left: -5px;
+    background: #f59e0b; color: white;
+    font-size: 10px; padding: 2px 5px;
+    border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    z-index: 5;
+}
+.rarity-label {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px;
+}

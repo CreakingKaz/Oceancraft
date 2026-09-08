@@ -1,5 +1,5 @@
-const MAX_SLOTS = 50;
-const MAX_STACK = 20;
+const MAX_SLOTS = 15;
+const MAX_STACK = 3;
 
 // Procedural SVG Generator for 50+ items to save bandwidth and memory
 function genSVG(type, c1, c2, c3='') {
