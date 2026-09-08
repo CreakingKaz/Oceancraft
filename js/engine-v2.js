@@ -38,10 +38,8 @@ function startGame() {
 
     // Equipo inicial para que el jugador pueda probar la hotbar al comenzar.
     giveItem('gancho_t1');
-    giveItem('martillo');
     giveItem('madera', 2);
     hotbar[0] = inventory[0].uid;
-    hotbar[1] = inventory[1].uid;
 
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('game-ui').classList.remove('hidden');
