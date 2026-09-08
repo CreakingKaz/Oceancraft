@@ -1,28 +1,36 @@
 
-// Lógica de transición de menús y guardados
+// ESTILO TERRARIA: El Canvas se empieza a dibujar INMEDIATAMENTE detrás del Splash.
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Pantalla de carga Star Studios
+    gameState = 'MENU';
+    requestAnimationFrame(gameLoop); // Empieza a dibujar el océano de fondo al instante
+
+    // Retraso de 2 segundos para Star Studios, luego desvanece
     setTimeout(() => {
         let splash = document.getElementById('splash-screen');
         splash.style.opacity = '0';
         
         setTimeout(() => {
             splash.classList.add('hidden');
-            // Mostrar Menú y activar animación del fondo
             document.getElementById('menu-layer').classList.remove('hidden');
-            gameState = 'MENU';
-            requestAnimationFrame(gameLoop); // Inicia el motor gráfico en modo fondo
-        }, 1000); // tiempo de fade-out
-    }, 2500); // tiempo visible de la marca
+            updatePreview(); // Inicializar el preview
+        }, 1500); // 1.5s de fade out
+    }, 2000); 
 });
 
 function showMenuPanel(panelId) {
     document.querySelectorAll('.menu-panel').forEach(p => p.classList.add('hidden'));
     document.getElementById(panelId).classList.remove('hidden');
+    if (panelId === 'continue-panel') updateSaveSlots();
+}
+
+// SISTEMA DE COSMÉTICOS: Previsualización en Tiempo Real
+function updatePreview() {
+    let color = document.getElementById('player-color').value;
+    let icon = document.getElementById('player-icon').value || "";
+    let preview = document.getElementById('player-preview');
     
-    if (panelId === 'continue-panel') {
-        updateSaveSlots();
-    }
+    preview.style.background = color;
+    preview.innerText = icon.substring(0, 1).toUpperCase();
 }
 
 function updateSaveSlots() {
@@ -32,17 +40,17 @@ function updateSaveSlots() {
         
         if (saveStr) {
             let data = JSON.parse(saveStr);
-            let playTime = data.playTime ? Math.floor(data.playTime / 60) : 0; // en minutos
+            let playTime = data.playTime ? Math.floor(data.playTime / 60) : 0;
             let wName = data.worldConfig?.name || `Mundo ${i}`;
-            infoDiv.innerHTML = `<strong style="color:#f1c40f">${wName}</strong><br>
-                                 Días: ${data.time.d} | Jugado: ${playTime} min<br>
-                                 <span style="font-size:11px; color:#aaa;">Última vez: ${data.lastSaved || 'Desconocido'}</span>`;
+            infoDiv.innerHTML = `<strong style="color:#00d2d3; font-size:16px;">${wName}</strong><br>
+                                 <span style="color:#ccc;">Días: ${data.time?.d || 1} | ${playTime} min</span>`;
         } else {
-            infoDiv.innerHTML = `<em style="color:#888;">Slot Vacío</em>`;
+            infoDiv.innerHTML = `<em style="color:#666; font-size:16px;">Slot Vacío</em>`;
         }
     }
 }
 
+// ARREGLO DEL BUG CRÍTICO DE CREACIÓN
 function createNewGame() {
     let wName = document.getElementById('world-name').value || "Mi Mundo";
     let diff = document.getElementById('world-diff').value;
@@ -55,10 +63,9 @@ function createNewGame() {
         diff: parseFloat(diff),
         freq: freq,
         color: color,
-        icon: icon
+        icon: icon.substring(0, 1).toUpperCase()
     };
 
-    // Buscar primer slot vacío o sobreescribir el 1
     let slotToUse = 1;
     for (let i = 1; i <= 3; i++) {
         if (!localStorage.getItem('oceancraft_s' + i)) { slotToUse = i; break; }
@@ -70,7 +77,7 @@ function createNewGame() {
 function loadGame(slotIndex) {
     let saveStr = localStorage.getItem('oceancraft_s' + slotIndex);
     if (!saveStr) {
-        alert("Este slot está vacío. ¡Crea un Nuevo Juego!");
+        alert("Slot vacío. ¡Crea un Nuevo Juego!");
         showMenuPanel('new-game-panel');
         return;
     }
