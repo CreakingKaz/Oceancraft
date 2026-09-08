@@ -1,4 +1,9 @@
+
 /* === GUARDADO Y UI PRINCIPAL === */
+let activeModal = null;
+let selectedSlot = 0;
+
+/* === GUARDADO Y UI === */
 function startGame(slotIndex, isNew) {
     let save = localStorage.getItem('oceancraft_s' + slotIndex);
     if (!isNew && !save) { alert("No hay partida guardada en este Slot."); return; }
@@ -14,6 +19,7 @@ function startGame(slotIndex, isNew) {
         game.hotbar[0] = game.inv[0].uid;
     } else {
         game = JSON.parse(save);
+        // Compatibilidad por si la partida vieja no tenía HP o estructuras
         if(!game.stats.hp) game.stats.hp = 100;
         if(!game.structures) game.structures = [];
     }
@@ -37,6 +43,12 @@ function notify(msg) { let d = document.createElement('div'); d.className = 'not
 let lastHpDrain = Date.now();
 function updateRealTimeSystems() {
     let now = Date.now();
+/* === TIEMPO Y SISTEMA DE VIDA EN TIEMPO REAL === */
+let lastHpDrain = Date.now();
+
+function updateRealTimeSystems() {
+    let now = Date.now();
+    // Drenaje de vida cada 2.3s
     if (now - lastHpDrain >= 2300) {
         lastHpDrain = now;
         let emptyStats = 0;
@@ -45,6 +57,7 @@ function updateRealTimeSystems() {
         if (game.stats.su <= 0) emptyStats++;
         
         if (emptyStats === 3) game.stats.hp = 0; 
+        if (emptyStats === 3) game.stats.hp = 0; // Instakill
         else if (emptyStats === 2) game.stats.hp -= 3;
         else if (emptyStats === 1) game.stats.hp -= 1;
         
@@ -70,6 +83,78 @@ function updateHUD() {
     document.getElementById('ui-sleep').innerText = Math.floor(Math.max(0, game.stats.su));
 }
 
+/* === INVENTARIO, HOTBAR Y ACCIONES === */
+let currentInvTab = 'todo'; let currentCraftTab = 'todo'; let selectedInvUID = null;
+function toggleMenu(id) {
+    if(activeModal && activeModal !== id) document.getElementById(activeModal).classList.add('hidden');
+    let el = document.getElementById(id);
+    if(el.classList.contains('hidden')) { el.classList.remove('hidden'); activeModal = id; if(id === 'inventory-modal') renderInv(); if(id === 'craft-modal') renderCraft(); } 
+    else { el.classList.add('hidden'); activeModal = null; }
+}
+
+function setInvTab(tab) { currentInvTab = tab; renderInv(); }
+function setCraftTab(tab) { currentCraftTab = tab; renderCraft(); }
+
+function renderInv() {
+    document.getElementById('inv-count').innerText = game.inv.length;
+    let grid = document.getElementById('inv-grid'); grid.innerHTML = '';
+    document.querySelectorAll('#inventory-modal .tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`#inventory-modal .tab[onclick*="${currentInvTab}"]`).classList.add('active');
+    
+    let filtered = game.inv.filter(i => currentInvTab === 'todo' || ITEMS_DB[i.id].cat === currentInvTab);
+    filtered.forEach(item => {
+        let base = ITEMS_DB[item.id];
+        let div = document.createElement('div'); div.className = 'inv-item'; div.style.background = base.color; div.innerText = base.symbol;
+        if(base.cat !== 'herr') div.innerHTML += `<div class="qty-badge">x${item.qty}</div>`;
+        else div.innerHTML += `<div class="durability-bar" style="width: ${(item.dur/base.maxDur)*100}%"></div>`;
+        
+        div.onclick = () => {
+            selectedInvUID = item.uid; document.getElementById('lore-text').innerHTML = `<strong>${base.name}</strong><br>${base.desc}`;
+            document.getElementById('lore-actions').innerHTML = `<button class="btn-small" onclick="equip(0)">Eq.1</button> <button class="btn-small" onclick="equip(1)">Eq.2</button> <button class="btn-small" onclick="equip(2)">Eq.3</button>`;
+        };
+        grid.appendChild(div);
+    });
+}
+
+function equip(slot) { game.hotbar[slot] = selectedInvUID; renderHotbar(); }
+
+function selectSlot(idx) {
+    document.querySelectorAll('.hotbar-slot').forEach(el => el.classList.remove('selected'));
+    document.getElementById('slot-' + idx).classList.add('selected');
+    selectedSlot = idx;
+    let uid = game.hotbar[idx];
+    let btn = document.getElementById('action-btn');
+    if(!uid || !game.inv.find(i => i.uid === uid)) btn.innerText = "Buscar a mano";
+    else {
+        let item = game.inv.find(i => i.uid === uid);
+        let base = ITEMS_DB[item.id];
+        if(base.isWeapon) btn.innerText = updateCombatBtnText(item, base);
+        else btn.innerText = base.action || "Usar";
+    }
+}
+
+function renderHotbar() {
+    for(let i=0; i<3; i++) {
+        let s = document.getElementById('slot-'+i); s.innerHTML = '';
+        let uid = game.hotbar[i]; let item = game.inv.find(x => x.uid === uid);
+        if(item) {
+            let base = ITEMS_DB[item.id];
+            s.style.background = base.color; s.innerText = base.symbol;
+            if(base.cat !== 'herr') s.innerHTML += `<div class="qty-badge">x${item.qty}</div>`;
+            else s.innerHTML += `<div class="durability-bar" style="width: ${(item.dur/base.maxDur)*100}%"></div>`;
+        } else s.style.background = 'rgba(34,34,34,var(--ui-opacity))';
+    }
+    selectSlot(selectedSlot);
+}
+
+function updateHUD() {
+    document.getElementById('ui-clock').innerText = `Día ${game.time.d} - ${String(game.time.h).padStart(2,'0')}:00`;
+    document.getElementById('ui-hp').innerText = Math.floor(Math.max(0, game.stats.hp));
+    document.getElementById('ui-food').innerText = Math.floor(Math.max(0, game.stats.h));
+    document.getElementById('ui-thirst').innerText = Math.floor(Math.max(0, game.stats.s));
+    document.getElementById('ui-sleep').innerText = Math.floor(Math.max(0, game.stats.su));
+}
+
 /* === ACCIÓN PRINCIPAL === */
 function doAction() {
     let uid = game.hotbar[selectedSlot];
@@ -84,6 +169,9 @@ function doAction() {
         
         if (base.isWeapon && typeof handleCombatAction === "function") {
             handleCombatAction(item, base); advanceTime({h:2, s:3, su:1});
+        if (base.isWeapon) {
+            handleCombatAction(item, base);
+            advanceTime({h:2, s:3, su:1});
         }
         else if (base.cat === 'herr') {
             advanceTime({h:4, s:6, su:2});
@@ -91,7 +179,6 @@ function doAction() {
                 if(Math.random() > 0.4) { let loot = ['madera','plastico','chatarra'][Math.floor(Math.random()*3)]; giveItem(loot, 1); notify("+1 " + ITEMS_DB[loot].name); } 
                 else notify("Gancho regresó vacío.");
             }
-            if(item.id === 'martillo') { notify("Martillo equipado. Clic en estructuras para quitarlas."); return; }
             item.dur--; if(item.dur <= 0) { removeItem(item.uid, 1); notify(base.name + " se ha roto."); }
             renderHotbar(); renderInv();
         } 
@@ -226,7 +313,6 @@ function draw() {
             let wy = (i * 80) + Math.sin((wx * 0.02) + globalTime) * 15; // Onda
             ctx.lineTo(wx, wy);
         }
-        ctx.stroke();
     }
 
     // 2. Balsa con Sombras
