@@ -1,220 +1,96 @@
 
-/* === GUARDADO Y UI PRINCIPAL === */
-let activeModal = null;
-let selectedSlot = 0;
+// ==========================================
+// OCEANCRAFT - MOTOR GRÁFICO (CANVAS Y LÓGICA)
+// ==========================================
 
-/* === GUARDADO Y UI === */
-function startGame(slotIndex, isNew) {
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth; 
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => { 
+    canvas.width = window.innerWidth; 
+    canvas.height = window.innerHeight; 
+});
+
+// Variables del juego
+let gameState = 'SPLASH'; // SPLASH, MENU, GAME
+let camera = { x: 0, y: 0, zoom: 1.5 };
+let player = { x: 0, y: 0, targetX: 0, targetY: 0, speed: 2.5, isMoving: false };
+let floaters = []; 
+let birds = []; // Gaviotas para el fondo del menú
+let globalTime = 0;
+let lastFrameTime = Date.now();
+
+// Configuración de Balsa
+const RAFT_SIZE = 5; 
+const TILE = 60;
+const RAFT_LIMIT = (RAFT_SIZE * TILE) / 2;
+
+// Estructura de partida actual
+let game = {
+    slot: 1,
+    playTime: 0, 
+    lastSaved: "",
+    worldConfig: {},
+    playerConfig: {},
+    inv: [], 
+    hotbar: [null, null, null], 
+    structures: [],
+    stats: { hp: 100, h: 100, s: 100, su: 100 },
+    time: { acts: 0, h: 8, d: 1 }
+};
+
+/* === INICIO DE PARTIDA === */
+function startGame(slotIndex, isNew, config) {
     let save = localStorage.getItem('oceancraft_s' + slotIndex);
-    if (!isNew && !save) { alert("No hay partida guardada en este Slot."); return; }
     
     if (isNew || !save) {
         game.slot = slotIndex;
-        game.diff = parseFloat(document.getElementById('diff-select').value);
-        game.playerConfig.icon = document.getElementById('player-icon').value || 'Kaz';
-        game.playerConfig.color = document.getElementById('player-color').value;
+        game.playTime = 0;
+        game.worldConfig = config || { name: "Archipiélago", diff: 1, freq: "normal" };
+        game.playerConfig = { color: config?.color || '#f39c12', icon: config?.icon || 'K' };
         game.inv = []; game.hotbar = [null, null, null]; game.structures = [];
         game.stats = { hp: 100, h: 100, s: 100, su: 100 };
+        game.time = { acts: 0, h: 8, d: 1 };
+        
         giveItem('gancho_t1', 1); giveItem('madera', 2);
         game.hotbar[0] = game.inv[0].uid;
     } else {
         game = JSON.parse(save);
-        // Compatibilidad por si la partida vieja no tenía HP o estructuras
-        if(!game.stats.hp) game.stats.hp = 100;
-        if(!game.structures) game.structures = [];
+        // Compatibilidad con guardados viejos
+        if(!game.playTime) game.playTime = 0;
+        if(!game.worldConfig) game.worldConfig = { name: "Mundo Recuperado", diff: 1, freq: "normal" };
     }
     
-    document.getElementById('main-menu').classList.add('hidden');
+    // Cambiar vista UI
+    document.getElementById('menu-layer').classList.add('hidden');
     document.getElementById('game-ui').classList.remove('hidden');
-    updateHUD(); renderHotbar();
-    isGameRunning = true; requestAnimationFrame(gameLoop);
+    
+    updateHUD(); 
+    renderHotbar();
+    
+    // Centrar cámara al jugador
+    camera.x = player.x; 
+    camera.y = player.y;
+    
+    gameState = 'GAME'; // Cambia el comportamiento del bucle render
 }
 
 function saveGame() {
+    game.lastSaved = new Date().toLocaleString();
     localStorage.setItem('oceancraft_s' + game.slot, JSON.stringify(game));
-    notify("Partida Guardada."); toggleMenu('settings-modal');
+    notify("Partida Guardada exitosamente."); 
 }
 
-function updateOpacity() { document.documentElement.style.setProperty('--ui-opacity', document.getElementById('opacity-slider').value); }
-function updateZoom() { camera.zoom = parseFloat(document.getElementById('zoom-slider').value); }
-function notify(msg) { let d = document.createElement('div'); d.className = 'notif'; d.innerText = msg; document.getElementById('notifications').appendChild(d); setTimeout(() => d.remove(), 3000); }
-
-/* === TIEMPO Y VIDA === */
-let lastHpDrain = Date.now();
-function updateRealTimeSystems() {
-    let now = Date.now();
-/* === TIEMPO Y SISTEMA DE VIDA EN TIEMPO REAL === */
-let lastHpDrain = Date.now();
-
-function updateRealTimeSystems() {
-    let now = Date.now();
-    // Drenaje de vida cada 2.3s
-    if (now - lastHpDrain >= 2300) {
-        lastHpDrain = now;
-        let emptyStats = 0;
-        if (game.stats.h <= 0) emptyStats++;
-        if (game.stats.s <= 0) emptyStats++;
-        if (game.stats.su <= 0) emptyStats++;
-        
-        if (emptyStats === 3) game.stats.hp = 0; 
-        if (emptyStats === 3) game.stats.hp = 0; // Instakill
-        else if (emptyStats === 2) game.stats.hp -= 3;
-        else if (emptyStats === 1) game.stats.hp -= 1;
-        
-        if (game.stats.hp <= 0) { alert("Has muerto. La naturaleza ha reclamado tu balsa."); location.reload(); }
-        updateHUD();
-    }
-}
-
-function advanceTime(cost) {
-    game.stats.h -= (cost.h || 0) * game.diff;
-    game.stats.s -= (cost.s || 0) * game.diff;
-    game.stats.su -= (cost.su || 0) * game.diff;
-    game.time.acts++;
-    if (game.time.acts >= 3) { game.time.acts = 0; game.time.h++; if (game.time.h >= 24) { game.time.h = 0; game.time.d++; } }
-    updateHUD();
-}
-
-function updateHUD() {
-    document.getElementById('ui-clock').innerText = `Día ${game.time.d} - ${String(game.time.h).padStart(2,'0')}:00`;
-    document.getElementById('ui-hp').innerText = Math.floor(Math.max(0, game.stats.hp));
-    document.getElementById('ui-food').innerText = Math.floor(Math.max(0, game.stats.h));
-    document.getElementById('ui-thirst').innerText = Math.floor(Math.max(0, game.stats.s));
-    document.getElementById('ui-sleep').innerText = Math.floor(Math.max(0, game.stats.su));
-}
-
-/* === INVENTARIO, HOTBAR Y ACCIONES === */
-let currentInvTab = 'todo'; let currentCraftTab = 'todo'; let selectedInvUID = null;
-function toggleMenu(id) {
-    if(activeModal && activeModal !== id) document.getElementById(activeModal).classList.add('hidden');
-    let el = document.getElementById(id);
-    if(el.classList.contains('hidden')) { el.classList.remove('hidden'); activeModal = id; if(id === 'inventory-modal') renderInv(); if(id === 'craft-modal') renderCraft(); } 
-    else { el.classList.add('hidden'); activeModal = null; }
-}
-
-function setInvTab(tab) { currentInvTab = tab; renderInv(); }
-function setCraftTab(tab) { currentCraftTab = tab; renderCraft(); }
-
-function renderInv() {
-    document.getElementById('inv-count').innerText = game.inv.length;
-    let grid = document.getElementById('inv-grid'); grid.innerHTML = '';
-    document.querySelectorAll('#inventory-modal .tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`#inventory-modal .tab[onclick*="${currentInvTab}"]`).classList.add('active');
-    
-    let filtered = game.inv.filter(i => currentInvTab === 'todo' || ITEMS_DB[i.id].cat === currentInvTab);
-    filtered.forEach(item => {
-        let base = ITEMS_DB[item.id];
-        let div = document.createElement('div'); div.className = 'inv-item'; div.style.background = base.color; div.innerText = base.symbol;
-        if(base.cat !== 'herr') div.innerHTML += `<div class="qty-badge">x${item.qty}</div>`;
-        else div.innerHTML += `<div class="durability-bar" style="width: ${(item.dur/base.maxDur)*100}%"></div>`;
-        
-        div.onclick = () => {
-            selectedInvUID = item.uid; document.getElementById('lore-text').innerHTML = `<strong>${base.name}</strong><br>${base.desc}`;
-            document.getElementById('lore-actions').innerHTML = `<button class="btn-small" onclick="equip(0)">Eq.1</button> <button class="btn-small" onclick="equip(1)">Eq.2</button> <button class="btn-small" onclick="equip(2)">Eq.3</button>`;
-        };
-        grid.appendChild(div);
-    });
-}
-
-function equip(slot) { game.hotbar[slot] = selectedInvUID; renderHotbar(); }
-
-function selectSlot(idx) {
-    document.querySelectorAll('.hotbar-slot').forEach(el => el.classList.remove('selected'));
-    document.getElementById('slot-' + idx).classList.add('selected');
-    selectedSlot = idx;
-    let uid = game.hotbar[idx];
-    let btn = document.getElementById('action-btn');
-    if(!uid || !game.inv.find(i => i.uid === uid)) btn.innerText = "Buscar a mano";
-    else {
-        let item = game.inv.find(i => i.uid === uid);
-        let base = ITEMS_DB[item.id];
-        if(base.isWeapon) btn.innerText = updateCombatBtnText(item, base);
-        else btn.innerText = base.action || "Usar";
-    }
-}
-
-function renderHotbar() {
-    for(let i=0; i<3; i++) {
-        let s = document.getElementById('slot-'+i); s.innerHTML = '';
-        let uid = game.hotbar[i]; let item = game.inv.find(x => x.uid === uid);
-        if(item) {
-            let base = ITEMS_DB[item.id];
-            s.style.background = base.color; s.innerText = base.symbol;
-            if(base.cat !== 'herr') s.innerHTML += `<div class="qty-badge">x${item.qty}</div>`;
-            else s.innerHTML += `<div class="durability-bar" style="width: ${(item.dur/base.maxDur)*100}%"></div>`;
-        } else s.style.background = 'rgba(34,34,34,var(--ui-opacity))';
-    }
-    selectSlot(selectedSlot);
-}
-
-function updateHUD() {
-    document.getElementById('ui-clock').innerText = `Día ${game.time.d} - ${String(game.time.h).padStart(2,'0')}:00`;
-    document.getElementById('ui-hp').innerText = Math.floor(Math.max(0, game.stats.hp));
-    document.getElementById('ui-food').innerText = Math.floor(Math.max(0, game.stats.h));
-    document.getElementById('ui-thirst').innerText = Math.floor(Math.max(0, game.stats.s));
-    document.getElementById('ui-sleep').innerText = Math.floor(Math.max(0, game.stats.su));
-}
-
-/* === ACCIÓN PRINCIPAL === */
-function doAction() {
-    let uid = game.hotbar[selectedSlot];
-    let item = game.inv.find(i => i.uid === uid);
-    
-    if(!item) {
-        advanceTime({h:3, s:5, su:2});
-        if(Math.random() > 0.4) { let loot = ['madera','plastico','hojas'][Math.floor(Math.random()*3)]; giveItem(loot, 1); notify("+1 " + ITEMS_DB[loot].name); } 
-        else notify("No encontraste nada.");
-    } else {
-        let base = ITEMS_DB[item.id];
-        
-        if (base.isWeapon && typeof handleCombatAction === "function") {
-            handleCombatAction(item, base); advanceTime({h:2, s:3, su:1});
-        if (base.isWeapon) {
-            handleCombatAction(item, base);
-            advanceTime({h:2, s:3, su:1});
-        }
-        else if (base.cat === 'herr') {
-            advanceTime({h:4, s:6, su:2});
-            if(item.id === 'gancho_t1') {
-                if(Math.random() > 0.4) { let loot = ['madera','plastico','chatarra'][Math.floor(Math.random()*3)]; giveItem(loot, 1); notify("+1 " + ITEMS_DB[loot].name); } 
-                else notify("Gancho regresó vacío.");
-            }
-            item.dur--; if(item.dur <= 0) { removeItem(item.uid, 1); notify(base.name + " se ha roto."); }
-            renderHotbar(); renderInv();
-        } 
-        else if (base.cat === 'com') {
-            game.stats.h = Math.min(100, game.stats.h + base.val.h); game.stats.s = Math.min(100, game.stats.s + base.val.s);
-            removeItem(item.uid, 1); notify("Consumiste " + base.name); renderHotbar(); renderInv(); updateHUD();
-        } 
-        else if (base.cat === 'est') {
-            window.pendingStructure = item; notify("Clic en la balsa para colocar: " + base.name);
-        }
-    }
-}
-
-/* === MOTOR CANVAS (Gráficos, Colisiones Reales, Olas) === */
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-
-let isGameRunning = false;
-let camera = { x: 0, y: 0, zoom: 1.5 };
-let player = { x: 0, y: 0, targetX: 0, targetY: 0, speed: 2.5, isMoving: false };
-let floaters = []; 
-let globalTime = 0;
-
-// Definimos la balsa real (5x5 bloques, centro en 0,0)
-const RAFT_SIZE = 5; 
-const TILE = 60;
-const RAFT_LIMIT = (RAFT_SIZE * TILE) / 2; // = 150
-
+/* === INTERACCIÓN DEL RATÓN (SOLO EN JUEGO) === */
 canvas.addEventListener('click', (e) => {
-    if(!isGameRunning || activeModal) return;
+    if(gameState !== 'GAME' || activeModal) return;
+    
     const worldX = (e.clientX - canvas.width / 2) / camera.zoom + camera.x;
     const worldY = (e.clientY - canvas.height / 2) / camera.zoom + camera.y;
 
-    // Recoger Barriles/Flotantes
+    // 1. Recoger Barriles/Flotantes
     for(let i = floaters.length -1; i >= 0; i--) {
         let f = floaters[i];
         if(worldX >= f.x - 20 && worldX <= f.x + 20 && worldY >= f.y - 20 && worldY <= f.y + 20) {
@@ -227,121 +103,141 @@ canvas.addEventListener('click', (e) => {
         }
     }
 
-    // Interacción Estructuras
-    let uid = game.hotbar[selectedSlot];
-    let isHammer = (uid && game.inv.find(i => i.uid === uid)?.id === 'martillo');
-    
-    for(let i=0; i<game.structures.length; i++) {
-        let s = game.structures[i];
-        if(worldX >= s.x && worldX <= s.x+40 && worldY >= s.y && worldY <= s.y+40) {
-            if(isHammer) {
-                if(!s.hasItems) {
-                    giveItem(s.id, 1); game.structures.splice(i, 1); notify("Recogido.");
-                    let hammer = game.inv.find(i => i.uid === uid); hammer.dur -= 5;
-                    if(hammer.dur <= 0) { removeItem(hammer.uid, 1); renderHotbar(); }
-                }
-            } else notify("Interactuando con Estructura.");
-            return;
-        }
-    }
-
-    // FÍSICAS DE COLISIÓN (El jugador no puede caminar en el agua)
-    // Restringimos las coordenadas destino dentro de la balsa (-150 a +150), dejando un margen para el cuerpo del jugador (15px)
+    // 2. Movimiento y Restricción a Balsa
     const limit = RAFT_LIMIT - 15;
     player.targetX = Math.max(-limit, Math.min(limit, worldX));
     player.targetY = Math.max(-limit, Math.min(limit, worldY));
     player.isMoving = true;
-
-    // Colocar Estructura (solo dentro de la balsa)
-    if (window.pendingStructure) {
-        let sx = Math.max(-limit, Math.min(limit - 40, worldX - 20));
-        let sy = Math.max(-limit, Math.min(limit - 40, worldY - 20));
-        game.structures.push({ id: window.pendingStructure.id, x: sx, y: sy, hasItems: false });
-        removeItem(window.pendingStructure.uid, 1); notify("Estructura colocada.");
-        window.pendingStructure = null; renderHotbar(); renderInv();
-    }
 });
 
+/* === BUCLE DE ACTUALIZACIÓN (LÓGICA Y TIEMPO) === */
 function update() {
-    updateRealTimeSystems();
-    globalTime += 0.02; // Tiempo para animaciones (olas, rotación)
-
-    // Generar Flotantes (Más seguido, mejor visualmente)
-    if(Math.random() < 0.015) {
-        let isBarrel = Math.random() > 0.8;
-        let ids = ['madera', 'plastico', 'hojas', 'chatarra'];
-        floaters.push({
-            id: isBarrel ? 'barrel' : ids[Math.floor(Math.random()*ids.length)],
-            isBarrel: isBarrel,
-            x: camera.x + (canvas.width/camera.zoom) + 50, 
-            y: camera.y + (Math.random()*800 - 400),
-            speed: Math.random()*0.8 + 0.5,
-            offsetSeed: Math.random() * 100 // Semilla única para rotación y bobbing
-        });
+    let now = Date.now();
+    let dt = (now - lastFrameTime) / 1000; // Delta time en segundos
+    lastFrameTime = now;
+    
+    globalTime += dt;
+    
+    if (gameState === 'GAME') {
+        game.playTime += dt; // Sumar tiempo de juego real
+        updateRealTimeSystems();
+        
+        // Mover jugador
+        if (player.isMoving) {
+            let dx = player.targetX - player.x; let dy = player.targetY - player.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > player.speed) { 
+                player.x += (dx / distance) * player.speed; 
+                player.y += (dy / distance) * player.speed; 
+            } else { 
+                player.x = player.targetX; player.y = player.targetY; player.isMoving = false; 
+            }
+        }
+        
+        // Cámara sigue al jugador suavemente
+        camera.x += (player.x - camera.x) * 0.1; 
+        camera.y += (player.y - camera.y) * 0.1;
+        
+        // Spawnear basura
+        if(Math.random() < 0.015) spawnFloater();
+    } 
+    else if (gameState === 'MENU') {
+        // En el menú, la cámara avanza a la derecha sola (simula balsa a la izquierda)
+        camera.x += 1.2;
+        camera.y = Math.sin(globalTime) * 10; // ligero balanceo vertical
+        
+        // Generar basura constante para el fondo
+        if(Math.random() < 0.03) spawnFloater(camera.x + (canvas.width/camera.zoom) + 100);
+        
+        // Generar gaviotas
+        if(Math.random() < 0.005) {
+            birds.push({
+                x: camera.x + canvas.width, 
+                y: camera.y - 200 + Math.random() * 400,
+                speed: Math.random() * 2 + 2,
+                offset: Math.random() * 100
+            });
+        }
     }
     
     // Mover flotantes
     floaters.forEach(f => f.x -= f.speed);
     floaters = floaters.filter(f => f.x > camera.x - (canvas.width/camera.zoom) - 200);
-
-    // Mover Jugador
-    if (player.isMoving) {
-        let dx = player.targetX - player.x; let dy = player.targetY - player.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > player.speed) { player.x += (dx / distance) * player.speed; player.y += (dy / distance) * player.speed; }
-        else { player.x = player.targetX; player.y = player.targetY; player.isMoving = false; }
-    }
     
-    // Cámara Suave
-    camera.x += (player.x - camera.x) * 0.1; camera.y += (player.y - camera.y) * 0.1;
+    // Mover pájaros (solo para menú/futuras islas)
+    birds.forEach(b => { b.x -= b.speed; b.y += Math.sin(globalTime * 5 + b.offset) * 0.5; });
+    birds = birds.filter(b => b.x > camera.x - canvas.width);
 }
 
+function spawnFloater(startX) {
+    let isBarrel = Math.random() > 0.8;
+    let ids = ['madera', 'plastico', 'hojas', 'chatarra'];
+    floaters.push({
+        id: isBarrel ? 'barrel' : ids[Math.floor(Math.random()*ids.length)],
+        isBarrel: isBarrel,
+        x: startX || (camera.x + (canvas.width/camera.zoom) + 50), 
+        y: camera.y + (Math.random()*800 - 400),
+        speed: Math.random()*0.8 + 0.5,
+        offsetSeed: Math.random() * 100 
+    });
+}
+
+/* === BUCLE DE DIBUJADO === */
 function draw() {
-    // 1. Océano Animado (Olas dinámicas)
+    // 1. Océano dinámico
     let h = game.time.h;
-    let oceanColor = (h >= 6 && h < 18) ? (h > 16 ? '#c23616' : '#0984e3') : '#0a3d62';
-    ctx.fillStyle = oceanColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Si estamos en el menú, dejarlo azul bonito siempre
+    let oceanColor = (gameState === 'MENU' || (h >= 6 && h < 18)) ? '#0a3d62' : '#041c2c';
+    if(gameState === 'GAME' && h > 16 && h < 19) oceanColor = '#c23616'; // Atardecer
+    
+    ctx.fillStyle = oceanColor; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
+    ctx.translate(canvas.width / 2, canvas.height / 2); 
+    ctx.scale(camera.zoom, camera.zoom); 
+    ctx.translate(-camera.x, -camera.y);
 
-    // Dibujar Olas usando Seno
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2;
-    for(let i = -10; i < 10; i++) {
+    // Olas trigonométricas
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; 
+    ctx.lineWidth = 2;
+    for(let i = -15; i < 15; i++) {
         ctx.beginPath();
-        for(let wx = camera.x - 600; wx < camera.x + 600; wx += 40) {
-            let wy = (i * 80) + Math.sin((wx * 0.02) + globalTime) * 15; // Onda
+        for(let wx = camera.x - 1000; wx < camera.x + 1000; wx += 40) {
+            let wy = (i * 80) + Math.sin((wx * 0.02) + globalTime * 2) * 15;
             ctx.lineTo(wx, wy);
         }
+        ctx.stroke();
     }
 
-    // 2. Balsa con Sombras
+    // 2. Balsa
     ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 15;
     ctx.fillStyle = '#8B4513'; ctx.strokeStyle = '#5c2e0b'; ctx.lineWidth = 3;
     let offset = RAFT_LIMIT;
+    // Si es menú, forzamos que la balsa esté en la cámara actual para que siempre se vea
+    let raftRenderX = (gameState === 'MENU') ? camera.x - 50 : 0;
+    
     for (let row = 0; row < RAFT_SIZE; row++) {
         for (let col = 0; col < RAFT_SIZE; col++) {
-            let px = (col * TILE) - offset; let py = (row * TILE) - offset;
+            let px = (col * TILE) - offset + raftRenderX; 
+            let py = (row * TILE) - offset;
             ctx.fillRect(px, py, TILE, TILE); ctx.strokeRect(px, py, TILE, TILE);
         }
     }
-    ctx.shadowBlur = 0; // Apagar sombras para el resto
+    ctx.shadowBlur = 0;
 
-    // 3. Flotantes Animados (Bobbing y Rotación)
+    // 3. Flotantes (Bobbing animado)
     floaters.forEach(f => {
         ctx.save();
-        // Bobbing: sube y baja matemáticamente usando seno
         let bobY = Math.sin(globalTime * 3 + f.offsetSeed) * 5; 
-        // Rotación lenta
         let rotation = Math.sin(globalTime + f.offsetSeed) * 0.5;
-        
         ctx.translate(f.x, f.y + bobY);
         ctx.rotate(rotation);
         
         if(f.isBarrel) {
             ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill();
-        } else {
+        } else if(ITEMS_DB[f.id]) {
             let b = ITEMS_DB[f.id];
             ctx.fillStyle = b.color; ctx.fillRect(-12, -12, 24, 24);
             ctx.fillStyle = 'white'; ctx.font = '14px Courier New'; ctx.fillText(b.symbol, -7, 4);
@@ -349,31 +245,99 @@ function draw() {
         ctx.restore();
     });
 
-    // 4. Estructuras (Con resaltado)
-    let uid = game.hotbar[selectedSlot];
-    let isHammer = (uid && game.inv.find(i => i.uid === uid)?.id === 'martillo');
-    
-    game.structures.forEach(s => {
-        let base = ITEMS_DB[s.id];
-        ctx.fillStyle = base.color; ctx.fillRect(s.x, s.y, 40, 40);
-        ctx.fillStyle = 'white'; ctx.font = '18px Courier New'; ctx.fillText(base.symbol, s.x+12, s.y+26);
+    // 4. Jugador (Solo en GAME)
+    if (gameState === 'GAME') {
+        ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 10;
+        ctx.fillStyle = game.playerConfig.color; 
+        ctx.beginPath(); ctx.arc(player.x, player.y, 16, 0, Math.PI * 2); ctx.fill(); 
+        ctx.shadowBlur = 0; ctx.strokeStyle = '#000'; ctx.stroke();
         
-        if (isHammer) {
-            ctx.strokeStyle = s.hasItems ? '#e67e22' : '#2ecc71';
-            ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x+20, s.y+20, 28, 0, Math.PI*2); ctx.stroke();
-        }
+        ctx.fillStyle = 'white'; ctx.font = 'bold 12px Courier New'; 
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
+        ctx.fillText(game.playerConfig.icon, player.x, player.y);
+    }
+    
+    // 5. Gaviotas de fondo (MENU)
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+    birds.forEach(b => {
+        ctx.beginPath();
+        let flap = Math.sin(globalTime * 10 + b.offset) * 5;
+        ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + 10, b.y - flap); ctx.lineTo(b.x + 20, b.y);
+        ctx.stroke();
     });
-
-    // 5. Jugador
-    if (player.isMoving) { ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.targetX, player.targetY); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]); }
-    
-    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 10;
-    ctx.fillStyle = game.playerConfig.color; ctx.beginPath(); ctx.arc(player.x, player.y, 16, 0, Math.PI * 2); ctx.fill(); 
-    ctx.shadowBlur = 0; ctx.strokeStyle = '#000'; ctx.stroke();
-    
-    ctx.fillStyle = 'white'; ctx.font = 'bold 12px Courier New'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(game.playerConfig.icon, player.x, player.y);
 
     ctx.restore();
 }
 
-function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+function gameLoop() { 
+    update(); 
+    draw(); 
+    if(gameState !== 'SPLASH') requestAnimationFrame(gameLoop); 
+}
+
+/* === SISTEMAS DE TIEMPO (RESTO DEL CÓDIGO) === */
+let lastHpDrain = Date.now();
+function updateRealTimeSystems() {
+    let now = Date.now();
+    if (now - lastHpDrain >= (2300 / game.worldConfig.diff)) {
+        lastHpDrain = now;
+        let emptyStats = 0;
+        if (game.stats.h <= 0) emptyStats++;
+        if (game.stats.s <= 0) emptyStats++;
+        if (game.stats.su <= 0) emptyStats++;
+        
+        if (emptyStats === 3) game.stats.hp = 0; 
+        else if (emptyStats === 2) game.stats.hp -= 3;
+        else if (emptyStats === 1) game.stats.hp -= 1;
+        
+        if (game.stats.hp <= 0) { alert("Has muerto. La naturaleza ha reclamado tu balsa."); location.reload(); }
+        updateHUD();
+    }
+}
+
+function advanceTime(cost) {
+    let diff = game.worldConfig.diff;
+    game.stats.h -= (cost.h || 0) * diff;
+    game.stats.s -= (cost.s || 0) * diff;
+    game.stats.su -= (cost.su || 0) * diff;
+    game.time.acts++;
+    if (game.time.acts >= 3) { 
+        game.time.acts = 0; game.time.h++; 
+        if (game.time.h >= 24) { game.time.h = 0; game.time.d++; } 
+    }
+    updateHUD();
+}
+
+function updateHUD() {
+    document.getElementById('ui-clock').innerText = `Día ${game.time.d} - ${String(game.time.h).padStart(2,'0')}:00`;
+    document.getElementById('ui-hp').innerText = Math.floor(Math.max(0, game.stats.hp));
+    document.getElementById('ui-food').innerText = Math.floor(Math.max(0, game.stats.h));
+    document.getElementById('ui-thirst').innerText = Math.floor(Math.max(0, game.stats.s));
+    document.getElementById('ui-sleep').innerText = Math.floor(Math.max(0, game.stats.su));
+}
+
+function doAction() {
+    let uid = game.hotbar[selectedSlot];
+    let item = game.inv.find(i => i.uid === uid);
+    
+    if(!item) {
+        advanceTime({h:3, s:5, su:2});
+        if(Math.random() > 0.4) { let loot = ['madera','plastico','hojas'][Math.floor(Math.random()*3)]; giveItem(loot, 1); notify("+1 " + ITEMS_DB[loot].name); } 
+        else notify("No encontraste nada.");
+    } else {
+        let base = ITEMS_DB[item.id];
+        if (base.cat === 'herr') {
+            advanceTime({h:4, s:6, su:2});
+            if(item.id === 'gancho_t1') {
+                if(Math.random() > 0.4) { let loot = ['madera','plastico','chatarra'][Math.floor(Math.random()*3)]; giveItem(loot, 1); notify("+1 " + ITEMS_DB[loot].name); } 
+                else notify("Gancho regresó vacío.");
+            }
+            item.dur--; if(item.dur <= 0) { removeItem(item.uid, 1); notify(base.name + " se ha roto."); }
+            renderHotbar(); renderInv();
+        } 
+        else if (base.cat === 'com') {
+            game.stats.h = Math.min(100, game.stats.h + base.val.h); game.stats.s = Math.min(100, game.stats.s + base.val.s);
+            removeItem(item.uid, 1); notify("Consumiste " + base.name); renderHotbar(); renderInv(); updateHUD();
+        } 
+    }
+}
