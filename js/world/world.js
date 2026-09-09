@@ -1,75 +1,89 @@
 const World = {
-    raftExists: false,
-    raft: { x: 0, y: 0, width: 200, height: 200 },
-    
-    // Todas las stats añadidas
+    raftTiles: ['0,0', '0,1', '1,0', '1,1'], // Balsa inicial[cite: 6]
+    structures: [],[cite: 6]
+    tileSize: 80,[cite: 6]
     stats: { health: 100, energy: 100, thirst: 100, hunger: 100, toxicity: 0 },
+    timeOfDay: 8 * 60, day: 1, timeSpeed: 10,
     
-    // Sistema de Tiempo
-    timeOfDay: 8 * 60, // Empieza a las 08:00 AM (en minutos)
-    day: 1,
-    timeSpeed: 10, // 1 segundo real = 10 minutos en el juego
+    camera: { x: 0, y: 0, zoom: 1.5 },[cite: 6]
+    oceanPhase: 0,[cite: 6]
     
-    particles: [], seagulls: [], workstations: [],
+    // Motor de Clima[cite: 6]
+    weather: { current: 'CLEAR', target: 'CLEAR', progress: 1.0, fogDensity: 0 },[cite: 6]
+    WEATHER_COLORS: {
+        'CLEAR': { top: [2, 132, 199], bottom: [12, 74, 110] },[cite: 6]
+        'STORM': { top: [7, 89, 133], bottom: [8, 47, 73] },[cite: 6]
+        'FOG':   { top: [100, 116, 139], bottom: [71, 85, 105] }[cite: 6]
+    },
+    curTop: [2, 132, 199], curBot: [12, 74, 110],[cite: 6]
+
+    lerpColor(c1, c2, t) {
+        return [
+            Math.round(c1[0] + (c2[0]-c1[0])*t),[cite: 6]
+            Math.round(c1[1] + (c2[1]-c1[1])*t),[cite: 6]
+            Math.round(c1[2] + (c2[2]-c1[2])*t) [cite: 6]
+        ];
+    },
 
     init() {
-        this.raft.x = window.innerWidth / 2 - this.raft.width / 2;
-        this.raft.y = window.innerHeight / 2 - this.raft.height / 2;
-        this.raftExists = true;
         Player.init();
         Hook.init();
-        UI.addLog("Te despiertas en la balsa...");
     },
 
     update(deltaTime) {
-        // Reloj del mundo
         this.timeOfDay += deltaTime * this.timeSpeed;
-        if (this.timeOfDay >= 1440) { // 24 horas (1440 minutos)
-            this.timeOfDay = 0;
-            this.day++;
-            UI.addLog(`¡Un nuevo día comienza! (Día ${this.day})`, true);
-        }
+        if (this.timeOfDay >= 1440) { this.timeOfDay = 0; this.day++; }
 
+        // Interpolación de Clima[cite: 6]
+        if (this.weather.progress < 1.0) {
+            this.weather.progress += 0.002;[cite: 6]
+            this.curTop = this.lerpColor(this.curTop, this.WEATHER_COLORS[this.weather.target].top, this.weather.progress);[cite: 6]
+            this.curBot = this.lerpColor(this.curBot, this.WEATHER_COLORS[this.weather.target].bottom, this.weather.progress);[cite: 6]
+        }
+        
+        this.oceanPhase += this.weather.current === 'STORM' ? 0.08 : 0.04;[cite: 6]
         Player.update(deltaTime);
         Debris.update(deltaTime);
-        Hook.update(deltaTime);
-
-        // Consumo de Estadísticas
-        this.stats.hunger = Math.max(0, this.stats.hunger - 0.3 * deltaTime);
-        this.stats.thirst = Math.max(0, this.stats.thirst - 0.5 * deltaTime);
-        this.stats.energy = Math.max(0, this.stats.energy - 0.1 * deltaTime); // Baja lento
-        
-        // La toxicidad baja la vida
-        if (this.stats.toxicity > 0) {
-            this.stats.health -= 0.5 * deltaTime;
-            this.stats.toxicity = Math.max(0, this.stats.toxicity - 0.1 * deltaTime); // Se cura sola con el tiempo
-        }
-
-        // Daño por hambre/sed extrema
-        if (this.stats.hunger === 0 || this.stats.thirst === 0) {
-            this.stats.health = Math.max(0, this.stats.health - 1 * deltaTime);
-        }
     },
 
     draw(ctx) {
-        // Fondo de agua dinámico según la hora (opcional para el futuro)
-        // ... (Tu código actual de dibujado de olas, balsa, gancho y debris se mantiene exactamente igual aquí)
-        
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 10; i++) {
-            const waveY = ((this.timeOfDay/1440) * 50 + i * 150) % window.innerHeight;
-            ctx.beginPath();
-            ctx.moveTo(0, waveY);
-            for(let x = 0; x < window.innerWidth; x += 50) {
-                ctx.lineTo(x, waveY + Math.sin(x * 0.05) * 10);
-            }
-            ctx.stroke();
-        }
+        // Fondo Oceánico Gradual[cite: 6]
+        let grad = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 100, window.innerWidth/2, window.innerHeight/2, window.innerWidth);[cite: 6]
+        grad.addColorStop(0, `rgb(${this.curTop[0]},${this.curTop[1]},${this.curTop[2]})`);[cite: 6]
+        grad.addColorStop(1, `rgb(${this.curBot[0]},${this.curBot[1]},${this.curBot[2]})`);[cite: 6]
+        ctx.fillStyle = grad;[cite: 6]
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-        Debris.draw(ctx);
-        if (Assets.images.balsa) ctx.drawImage(Assets.images.balsa, this.raft.x, this.raft.y, this.raft.width, this.raft.height);
+        ctx.save();
+        ctx.translate(window.innerWidth / 2, window.innerHeight / 2);[cite: 6]
+        ctx.scale(this.camera.zoom, this.camera.zoom);[cite: 6]
+        ctx.translate(-this.camera.x, -this.camera.y);[cite: 6]
+
+        let raftSwayX = Math.cos(this.oceanPhase) * 5;[cite: 6]
+        let raftSwayY = Math.sin(this.oceanPhase * 1.5) * 5;[cite: 6]
+        ctx.save(); ctx.translate(raftSwayX, raftSwayY);[cite: 6]
+
+        // Dibujar Cuadrícula de la Balsa[cite: 6]
+        this.raftTiles.forEach(t => {
+            let [r,c] = t.split(',').map(Number);[cite: 6]
+            let px = c * this.tileSize;[cite: 6]
+            let py = r * this.tileSize;[cite: 6]
+            
+            ctx.fillStyle = '#b45309'; ctx.fillRect(px, py, this.tileSize, this.tileSize);[cite: 6]
+            ctx.fillStyle = '#92400e'; ctx.fillRect(px + 4, py + 4, this.tileSize - 8, this.tileSize - 8);[cite: 6]
+            ctx.strokeStyle = '#78350f'; ctx.lineWidth = 3; ctx.strokeRect(px, py, this.tileSize, this.tileSize);[cite: 6]
+        });
+        
+        ctx.restore();
         Player.draw(ctx);
-        Hook.draw(ctx);
+        ctx.restore();
+        
+        // Oscuridad Nocturna[cite: 6]
+        let hour = this.timeOfDay / 60;[cite: 6]
+        let darkness = hour < 5 || hour >= 20 ? 0.6 : (hour >= 5 && hour < 7 ? 0.6 - ((hour - 5) / 2) * 0.6 : (hour >= 18 && hour < 20 ? ((hour - 18) / 2) * 0.6 : 0));[cite: 6]
+        if (darkness > 0) {
+            ctx.fillStyle = `rgba(10, 15, 30, ${darkness})`;[cite: 6]
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        }
     }
 };
