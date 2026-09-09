@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oceancraft</title>
-    <!-- Fuente Pixel-Art de Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>Oceancraft - UI Moderno</title>
+    <!-- Fuente moderna y limpia para coincidir con la imagen -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -15,58 +15,84 @@
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui-layer">
-            <!-- BLOQUE: Arriba a la Derecha (Botones Grises apilados) -->
-            <div class="ui-top-right">
-                <button id="btn-save" class="btn-grey">Guardar</button>
-                <button id="btn-options" class="btn-grey">Opciones</button>
-            </div>
-
-            <!-- BLOQUE: Arriba a la Izquierda (Estadísticas Verdes) -->
-            <div class="ui-stats">
-                <div class="stat-bar">VIDA: <span id="health-val">100</span>%</div>
-                <div class="stat-bar">AGUA: <span id="thirst-val">100</span>%</div>
-                <div class="stat-bar">COMIDA: <span id="hunger-val">100</span>%</div>
-            </div>
-
-            <!-- NUEVO BLOQUE: Franja Inferior completa -->
-            <div class="ui-bottom-layout">
+            
+            <!-- PANEL SUPERIOR IZQUIERDO (Tiempo, Estadísticas y Log) -->
+            <div class="panel-left">
+                <div id="time-display">Día 1 - 08:00</div>
+                <div class="divider"></div>
                 
-                <!-- Abajo Izquierda: Log + 2 Botones -->
-                <div class="bottom-section left-section">
-                    <div id="action-log" class="log-panel"></div>
-                    <div class="button-group">
-                        <button id="btn-craft" class="btn-blue">Craft</button>
-                        <button id="btn-action" class="btn-blue disabled">Acción</button>
-                    </div>
+                <div class="stats-container">
+                    <div class="stat-row"><span class="stat-lbl c-red">VIDA</span><div class="bar-bg"><div id="bar-health" class="bar-fill bg-red"></div></div></div>
+                    <div class="stat-row"><span class="stat-lbl c-yellow">ENRG</span><div class="bar-bg"><div id="bar-energy" class="bar-fill bg-yellow"></div></div></div>
+                    <div class="stat-row"><span class="stat-lbl c-blue">AGUA</span><div class="bar-bg"><div id="bar-thirst" class="bar-fill bg-blue"></div></div></div>
+                    <div class="stat-row"><span class="stat-lbl c-orange">CMDA</span><div class="bar-bg"><div id="bar-hunger" class="bar-fill bg-orange"></div></div></div>
+                    <div class="stat-row"><span class="stat-lbl c-green">TOXI</span><div class="bar-bg"><div id="bar-toxicity" class="bar-fill bg-green"></div></div></div>
                 </div>
 
-                <!-- Abajo Centro: Slots Rojos -->
-                <div class="bottom-section center-section">
+                <div class="divider"></div>
+                
+                <!-- Log de eventos -->
+                <div id="event-log"></div>
+            </div>
+
+            <!-- BOTÓN OPCIONES (Arriba Derecha) -->
+            <button id="btn-opc" class="btn-top-right">OPC</button>
+
+            <!-- INTERFAZ INFERIOR CENTRAL -->
+            <div class="panel-bottom">
+                
+                <!-- Controles de Cámara -->
+                <div class="camera-controls">
+                    <button id="cam-minus">-</button>
+                    <span>Cámara</span>
+                    <button id="cam-plus">+</button>
+                </div>
+
+                <!-- Botones y Hotbar -->
+                <div class="bottom-actions">
+                    <div class="side-buttons">
+                        <button class="btn-side bg-purple">Horno</button>
+                        <button class="btn-side bg-darkblue">Básico</button>
+                    </div>
+
                     <div class="hotbar">
                         <div class="slot" data-slot="1"></div>
-                        <div class="slot" data-slot="2"></div>
+                        <div class="slot active-slot" data-slot="2">
+                            <img src="" style="display:none;">
+                            <span class="slot-qty">x1</span>
+                        </div>
                         <div class="slot" data-slot="3"></div>
                     </div>
-                </div>
 
-                <!-- Abajo Derecha: Loot + 2 Botones -->
-                <div class="bottom-section right-section">
-                    <div id="loot-log" class="log-panel right-aligned"></div>
-                    <div class="button-group">
-                        <button id="btn-inv" class="btn-blue">Inv.</button>
-                        <button id="btn-sleep" class="btn-blue">Dormir</button>
+                    <div class="main-buttons">
+                        <button id="btn-eat" class="btn-main bg-brightblue">Comer</button>
+                        <button id="btn-inv" class="btn-main bg-darkblue">INV</button>
                     </div>
                 </div>
-
             </div>
+
+            <!-- MENÚS PREPARADOS (Ocultos por defecto) -->
+            <div id="menu-overlay" class="hidden">
+                <div id="inventory-menu" class="menu-window hidden">
+                    <h2>Inventario</h2>
+                    <div class="inv-grid"></div>
+                    <button class="btn-close">Cerrar</button>
+                </div>
+                <div id="options-menu" class="menu-window hidden">
+                    <h2>Opciones</h2>
+                    <button id="btn-save" class="btn-main bg-brightblue">Guardar Partida</button>
+                    <button class="btn-close">Cerrar</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- Scripts en orden estricto -->
     <script src="js/core/assets.js"></script>
     <script src="js/items.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/ui/ui.js"></script>
+    <script src="js/ui/menus.js"></script>
     <script src="js/mechanics/inventory.js"></script>
     <script src="js/mechanics/hook.js"></script>
     <script src="js/mechanics/debris.js"></script>

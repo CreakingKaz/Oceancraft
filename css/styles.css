@@ -1,95 +1,112 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Press Start 2P', cursive; user-select: none; }
-body { background-color: #1a1a1a; color: white; overflow: hidden; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; user-select: none; }
+body { background-color: #0f2c4a; color: #ecf0f1; overflow: hidden; }
 
-#loading-screen { position: absolute; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #0f4c75; font-size: 20px; z-index: 9999; color: #bbe1fa; }
 #game-container { position: relative; width: 100vw; height: 100vh; }
-canvas { display: block; width: 100%; height: 100%; background-color: #1e6091; }
+canvas { display: block; width: 100%; height: 100%; background-color: #124068; }
 
-/* Evitar que la UI bloquee los clics en el mar (para que el jugador se pueda mover) */
 #ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 100; }
+button, .slot, .menu-window { pointer-events: auto; }
 
-/* Rehabilitar clics solo en elementos interactivos de la UI */
-button, .slot, .stat-bar { pointer-events: auto; }
-
-
-/* ===========================
-   TOP UI
-=========================== */
-.ui-stats { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 10px; }
-.stat-bar { background-color: rgba(0,0,0,0.7); padding: 10px; border: 3px solid #27ae60; /* Borde Verde como tu dibujo */ font-size: 10px; color: #ffcc00;}
-.stat-bar span { color: white; }
-
-/* Botones grises arriba a la derecha en vertical */
-.ui-top-right { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; }
-.btn-grey { background-color: #7f8c8d; color: white; border: 3px solid #333; /* Borde Gris/Negro */ padding: 12px; font-size: 10px; cursor: pointer; }
-
-
-/* ===========================
-   BOTTOM UI (Franja Inferior)
-=========================== */
-.ui-bottom-layout {
+/* PANEL IZQUIERDO (Estilo Imagen) */
+.panel-left {
     position: absolute;
-    bottom: 20px;
+    top: 20px;
     left: 20px;
+    background-color: rgba(14, 28, 48, 0.85);
+    border-radius: 12px;
+    padding: 15px;
+    width: 260px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+#time-display { font-size: 16px; font-weight: 800; text-align: center; color: #fff; margin-bottom: 5px; }
+.divider { height: 1px; background-color: rgba(255,255,255,0.1); margin: 10px 0; }
+
+/* Barras de Estadísticas */
+.stats-container { display: flex; flex-direction: column; gap: 8px; }
+.stat-row { display: flex; align-items: center; justify-content: space-between; }
+.stat-lbl { font-size: 11px; font-weight: 800; width: 45px; }
+.bar-bg { flex-grow: 1; background-color: #0a1423; height: 8px; border-radius: 4px; overflow: hidden; margin-left: 10px; }
+.bar-fill { height: 100%; width: 100%; border-radius: 4px; transition: width 0.3s ease; }
+
+/* Colores de las barras */
+.c-red { color: #ff4757; } .bg-red { background-color: #ff4757; }
+.c-yellow { color: #feca57; } .bg-yellow { background-color: #feca57; }
+.c-blue { color: #48dbfb; } .bg-blue { background-color: #48dbfb; }
+.c-orange { color: #ff9f43; } .bg-orange { background-color: #ff9f43; }
+.c-green { color: #1dd1a1; } .bg-green { background-color: #1dd1a1; }
+
+/* Log de Eventos (Ahora integrado al panel) */
+#event-log {
+    height: 120px;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 4px;
+}
+.log-msg { font-size: 10px; color: #bdc3c7; line-height: 1.4; animation: fadeIn 0.3s; }
+.log-time { color: #7f8c8d; margin-right: 5px; }
+
+/* BOTÓN OPCIONES */
+.btn-top-right {
+    position: absolute;
+    top: 20px;
     right: 20px;
+    background-color: rgba(14, 28, 48, 0.85);
+    color: #bdc3c7;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* INTERFAZ INFERIOR */
+.panel-bottom {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    justify-content: space-between; /* Separa los 3 bloques a los extremos y al centro */
-    align-items: flex-end; /* Alinea todo abajo */
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
 }
 
-/* Secciones individuales */
-.bottom-section { display: flex; flex-direction: column; gap: 10px; }
-.center-section { align-items: center; }
-
-/* Grupo de botones azules */
-.button-group { display: flex; gap: 10px; }
-.btn-blue { 
-    background-color: #2980b9; 
-    color: white; 
-    border: 3px solid #1a5276; /* Borde Azul Oscuro */ 
-    padding: 12px 15px; 
-    font-size: 10px; 
-    cursor: pointer; 
-}
-.btn-blue.disabled { background-color: #555; border-color: #333; color: #888; cursor: not-allowed; }
-
-/* Efecto al hacer clic en los botones */
-button:active:not(.disabled) { transform: scale(0.95); }
-
-/* Slots centrales */
-.hotbar { display: flex; gap: 15px; }
-.slot { 
-    width: 50px; 
-    height: 50px; 
-    background: rgba(0,0,0,0.5); 
-    border: 4px solid #c0392b; /* Borde Rojo grueso como tu dibujo */ 
-}
-
-
-/* ===========================
-   LOGS (Cajas Amarillas)
-=========================== */
-.log-panel {
-    width: 250px;
-    min-height: 25px;
+.camera-controls {
+    background-color: rgba(14, 28, 48, 0.85);
+    border-radius: 20px;
     display: flex;
-    flex-direction: column-reverse; /* Hace que los nuevos mensajes empujen a los viejos hacia arriba */
-    gap: 5px;
+    align-items: center;
+    padding: 5px 15px;
+    gap: 15px;
+    font-size: 12px;
+    font-weight: 700;
 }
-.right-aligned { align-items: flex-end; text-align: right; }
+.camera-controls button { background: none; border: none; color: white; font-size: 16px; cursor: pointer; }
 
-/* Diseño de los textos que aparecen */
-.log-msg { 
-    background: rgba(0,0,0,0.7); 
-    padding: 8px; 
-    font-size: 9px; 
-    animation: fadeOut 5s forwards; 
-    border: 2px solid #f1c40f; /* Borde Amarillo como tu dibujo */
-}
+.bottom-actions { display: flex; align-items: flex-end; gap: 15px; }
+.side-buttons { display: flex; flex-direction: column; gap: 10px; }
+.btn-side { width: 60px; height: 45px; border-radius: 8px; border: none; color: white; font-size: 10px; font-weight: 700; cursor: pointer; }
+.bg-purple { background-color: #5f27cd; }
+.bg-darkblue { background-color: #222f3e; }
 
-@keyframes fadeOut {
-    0% { opacity: 1; transform: translateY(10px); }
-    10% { opacity: 1; transform: translateY(0); }
-    80% { opacity: 1; }
-    100% { opacity: 0; }
-}
+.hotbar { display: flex; gap: 10px; background-color: rgba(14, 28, 48, 0.5); padding: 10px; border-radius: 12px; }
+.slot { width: 60px; height: 60px; background-color: #2f3640; border-radius: 8px; position: relative; border: 2px solid transparent; }
+.active-slot { border-color: #feca57; background-color: #353b48; }
+.slot-qty { position: absolute; bottom: 5px; right: 5px; font-size: 10px; font-weight: 800; }
+
+.main-buttons { display: flex; gap: 10px; }
+.btn-main { height: 60px; border-radius: 12px; border: none; color: white; font-weight: 800; cursor: pointer; }
+#btn-eat { width: 90px; font-size: 14px; }
+#btn-inv { width: 60px; font-size: 12px; }
+.bg-brightblue { background-color: #48dbfb; color: #0a1423 !important; }
+
+/* MENÚS (Base preparada) */
+#menu-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 200; pointer-events: auto; }
+.menu-window { background: #0e1c30; padding: 20px; border-radius: 12px; min-width: 300px; color: white; text-align: center; }
+.hidden { display: none !important; }
+.btn-close { margin-top: 20px; padding: 10px 20px; background: #ff4757; border: none; border-radius: 8px; color: white; font-weight: 800; cursor: pointer; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }

@@ -1,76 +1,55 @@
 const UI = {
-    actionBtn: null,
-    activeWorkstation: null,
-
     init() {
-        this.actionBtn = document.getElementById('btn-action');
-
-        // Botón Acción (Se habilita si estás sobre la mesa)
-        this.actionBtn.addEventListener('click', () => {
-            if (this.activeWorkstation) {
-                this.addActionLog(`Usando: ${this.activeWorkstation.id}`);
-                // ¡Magia! Te da madera que va a tus cuadrados rojos
-                Inventory.addItem({ name: "Madera" }); 
+        // Elimino los eventos de la mesa que te molestaban, ahora el log es limpio.
+        
+        // Botones base
+        document.getElementById('btn-eat').addEventListener('click', () => {
+            if (World.stats.hunger < 100) {
+                World.stats.hunger = Math.min(100, World.stats.hunger + 20);
+                this.addLog("Has consumido comida.");
             }
         });
 
-        // Demás botones
-        document.getElementById('btn-craft').addEventListener('click', () => this.addActionLog("Menú de Crafteo..."));
-        document.getElementById('btn-inv').addEventListener('click', () => this.addActionLog("Revisando Mochila..."));
-        document.getElementById('btn-sleep').addEventListener('click', () => this.addActionLog("Durmiendo... zZz"));
-        
-        document.getElementById('btn-save').addEventListener('click', () => this.addActionLog("Partida Guardada."));
-        document.getElementById('btn-options').addEventListener('click', () => this.addActionLog("Abriendo opciones..."));
-
-        // Eventos aleatorios de mundo (Log Amarillo)
+        // Eventos aleatorios (clima)
         setInterval(() => {
-            if(Math.random() < 0.2) this.addActionLog("El viento sopla fuerte...");
-        }, 15000);
+            if(Math.random() < 0.1) this.addLog("Ha comenzado a llover...", true);
+        }, 30000);
     },
 
     update() {
-        document.getElementById('health-val').innerText = Math.floor(World.stats.health);
-        document.getElementById('hunger-val').innerText = Math.floor(World.stats.hunger);
-        document.getElementById('thirst-val').innerText = Math.floor(World.stats.thirst);
+        // Actualizar Reloj
+        let hours = Math.floor(World.timeOfDay / 60).toString().padStart(2, '0');
+        let minutes = Math.floor(World.timeOfDay % 60).toString().padStart(2, '0');
+        document.getElementById('time-display').innerText = `Día ${World.day} - ${hours}:${minutes}`;
 
-        // Trigger de proximidad con las mesas
-        let isNearStation = false;
-        World.workstations.forEach(ws => {
-            const dx = (Player.x + Player.size/2) - (ws.x + ws.size/2);
-            const dy = (Player.y + Player.size/2) - (ws.y + ws.size/2);
-            const distance = Math.sqrt(dx*dx + dy*dy);
-            
-            if (distance < 50) {
-                isNearStation = true;
-                this.activeWorkstation = ws;
-            }
-        });
+        // Actualizar el ancho de las barras de estadísticas (0% a 100%)
+        document.getElementById('bar-health').style.width = World.stats.health + '%';
+        document.getElementById('bar-energy').style.width = World.stats.energy + '%';
+        document.getElementById('bar-thirst').style.width = World.stats.thirst + '%';
+        document.getElementById('bar-hunger').style.width = World.stats.hunger + '%';
+        document.getElementById('bar-toxicity').style.width = World.stats.toxicity + '%';
+    },
 
-        if (isNearStation) {
-            this.actionBtn.classList.remove('disabled');
-            this.actionBtn.innerText = `Usar ${this.activeWorkstation.id}`;
-        } else {
-            this.actionBtn.classList.add('disabled');
-            this.actionBtn.innerText = 'Acción';
-            this.activeWorkstation = null;
+    // Sistema de Log rediseñado con Timestamps
+    addLog(text, isMajorEvent = false) {
+        const log = document.getElementById('event-log');
+        const msg = document.createElement('div');
+        msg.className = 'log-msg';
+        
+        // Obtener la hora del juego al momento del suceso
+        let h = Math.floor(World.timeOfDay / 60).toString().padStart(2, '0');
+        let m = Math.floor(World.timeOfDay % 60).toString().padStart(2, '0');
+        
+        msg.innerHTML = `<span class="log-time">[${h}:${m}]</span> ${text}`;
+        
+        // Si es un evento mayor (nuevo día, clima), resaltarlo
+        if (isMajorEvent) msg.style.color = "#feca57";
+
+        log.appendChild(msg);
+        
+        // Mantener solo los últimos 5 mensajes para que no desborde el panel
+        if (log.children.length > 5) {
+            log.removeChild(log.firstChild);
         }
-    },
-
-    addActionLog(text) {
-        const log = document.getElementById('action-log');
-        const msg = document.createElement('div');
-        msg.className = 'log-msg';
-        msg.innerText = text;
-        log.appendChild(msg);
-        setTimeout(() => { if (msg.parentNode) msg.parentNode.removeChild(msg); }, 4800);
-    },
-
-    addLootLog(text) {
-        const log = document.getElementById('loot-log');
-        const msg = document.createElement('div');
-        msg.className = 'log-msg';
-        msg.innerText = text;
-        log.appendChild(msg);
-        setTimeout(() => { if (msg.parentNode) msg.parentNode.removeChild(msg); }, 4800);
     }
 };
