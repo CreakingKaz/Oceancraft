@@ -1,100 +1,95 @@
-/* Reseteo y estética general */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Press Start 2P', cursive;
-    user-select: none;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Press Start 2P', cursive; user-select: none; }
+body { background-color: #1a1a1a; color: white; overflow: hidden; }
 
-body {
-    background-color: #1a1a1a;
-    color: white;
-    overflow: hidden; /* Evita que aparezcan barras de scroll lateral */
-}
+#loading-screen { position: absolute; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #0f4c75; font-size: 20px; z-index: 9999; color: #bbe1fa; }
+#game-container { position: relative; width: 100vw; height: 100vh; }
+canvas { display: block; width: 100%; height: 100%; background-color: #1e6091; }
 
-/* Pantalla de carga */
-#loading-screen {
-    position: absolute;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #0f4c75;
-    font-size: 20px;
-    z-index: 9999;
-    color: #bbe1fa;
-}
+/* Evitar que la UI bloquee los clics en el mar (para que el jugador se pueda mover) */
+#ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 100; }
 
-#game-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-}
+/* Rehabilitar clics solo en elementos interactivos de la UI */
+button, .slot, .stat-bar { pointer-events: auto; }
 
-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    background-color: #3282b8; /* Azul océano */
-}
 
-/* Contenedor Arriba a la Derecha */
-.ui-top-right {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    gap: 15px;
-    z-index: 100;
-}
+/* ===========================
+   TOP UI
+=========================== */
+.ui-stats { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 10px; }
+.stat-bar { background-color: rgba(0,0,0,0.7); padding: 10px; border: 3px solid #27ae60; /* Borde Verde como tu dibujo */ font-size: 10px; color: #ffcc00;}
+.stat-bar span { color: white; }
 
-button {
-    background-color: #1b262c;
-    color: #bbe1fa;
-    border: 2px solid #bbe1fa;
-    padding: 10px 15px;
-    font-size: 12px;
-    cursor: pointer;
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
-    transition: transform 0.1s;
-}
+/* Botones grises arriba a la derecha en vertical */
+.ui-top-right { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; }
+.btn-grey { background-color: #7f8c8d; color: white; border: 3px solid #333; /* Borde Gris/Negro */ padding: 12px; font-size: 10px; cursor: pointer; }
 
-button:active {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-}
 
-/* Estadísticas Arriba a la Izquierda */
-.ui-stats {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 100;
-}
-
-.stat-bar {
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 10px;
-    border: 2px solid #3282b8;
-    font-size: 12px;
-}
-
-.label {
-    color: #ffcc00;
-}
-
-/* Texto de indicación para activar el sonido */
-#click-prompt {
+/* ===========================
+   BOTTOM UI (Franja Inferior)
+=========================== */
+.ui-bottom-layout {
     position: absolute;
     bottom: 20px;
-    width: 100%;
-    text-align: center;
-    font-size: 10px;
-    color: rgba(255,255,255,0.5);
-    pointer-events: none;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between; /* Separa los 3 bloques a los extremos y al centro */
+    align-items: flex-end; /* Alinea todo abajo */
+}
+
+/* Secciones individuales */
+.bottom-section { display: flex; flex-direction: column; gap: 10px; }
+.center-section { align-items: center; }
+
+/* Grupo de botones azules */
+.button-group { display: flex; gap: 10px; }
+.btn-blue { 
+    background-color: #2980b9; 
+    color: white; 
+    border: 3px solid #1a5276; /* Borde Azul Oscuro */ 
+    padding: 12px 15px; 
+    font-size: 10px; 
+    cursor: pointer; 
+}
+.btn-blue.disabled { background-color: #555; border-color: #333; color: #888; cursor: not-allowed; }
+
+/* Efecto al hacer clic en los botones */
+button:active:not(.disabled) { transform: scale(0.95); }
+
+/* Slots centrales */
+.hotbar { display: flex; gap: 15px; }
+.slot { 
+    width: 50px; 
+    height: 50px; 
+    background: rgba(0,0,0,0.5); 
+    border: 4px solid #c0392b; /* Borde Rojo grueso como tu dibujo */ 
+}
+
+
+/* ===========================
+   LOGS (Cajas Amarillas)
+=========================== */
+.log-panel {
+    width: 250px;
+    min-height: 25px;
+    display: flex;
+    flex-direction: column-reverse; /* Hace que los nuevos mensajes empujen a los viejos hacia arriba */
+    gap: 5px;
+}
+.right-aligned { align-items: flex-end; text-align: right; }
+
+/* Diseño de los textos que aparecen */
+.log-msg { 
+    background: rgba(0,0,0,0.7); 
+    padding: 8px; 
+    font-size: 9px; 
+    animation: fadeOut 5s forwards; 
+    border: 2px solid #f1c40f; /* Borde Amarillo como tu dibujo */
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translateY(10px); }
+    10% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
 }

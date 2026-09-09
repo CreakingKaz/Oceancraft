@@ -3,43 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oceancraft - Creado 100% con IA</title>
-    <!-- Fuente Pixel-Art de Google Fonts para mejorar la estética -->
+    <title>Oceancraft</title>
+    <!-- Fuente Pixel-Art de Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Pantalla de carga -->
     <div id="loading-screen">Generando mundo...</div>
 
-    <!-- Contenedor principal del Juego -->
     <div id="game-container" style="display: none;">
         <canvas id="gameCanvas"></canvas>
         
-        <!-- Interfaz de Usuario -->
         <div id="ui-layer">
-            <!-- Petición 1: Botones de guardado y opciones arriba a la derecha -->
+            <!-- BLOQUE: Arriba a la Derecha (Botones Grises apilados) -->
             <div class="ui-top-right">
-                <button id="btn-save">Guardado Rápido</button>
-                <button id="btn-options">Opciones</button>
+                <button id="btn-save" class="btn-grey">Guardar</button>
+                <button id="btn-options" class="btn-grey">Opciones</button>
             </div>
 
-            <!-- Estadísticas de supervivencia arriba a la izquierda -->
+            <!-- BLOQUE: Arriba a la Izquierda (Estadísticas Verdes) -->
             <div class="ui-stats">
-                <div class="stat-bar"><span class="label">VIDA:</span> <span id="health-val">100</span>%</div>
-                <div class="stat-bar"><span class="label">AGUA:</span> <span id="thirst-val">100</span>%</div>
-                <div class="stat-bar"><span class="label">COMIDA:</span> <span id="hunger-val">100</span>%</div>
+                <div class="stat-bar">VIDA: <span id="health-val">100</span>%</div>
+                <div class="stat-bar">AGUA: <span id="thirst-val">100</span>%</div>
+                <div class="stat-bar">COMIDA: <span id="hunger-val">100</span>%</div>
             </div>
-            
-            <div id="click-prompt">Haz clic en cualquier lado para activar el sonido ambiental</div>
+
+            <!-- NUEVO BLOQUE: Franja Inferior completa -->
+            <div class="ui-bottom-layout">
+                
+                <!-- Abajo Izquierda: Log + 2 Botones -->
+                <div class="bottom-section left-section">
+                    <div id="action-log" class="log-panel"></div>
+                    <div class="button-group">
+                        <button id="btn-craft" class="btn-blue">Craft</button>
+                        <button id="btn-action" class="btn-blue disabled">Acción</button>
+                    </div>
+                </div>
+
+                <!-- Abajo Centro: Slots Rojos -->
+                <div class="bottom-section center-section">
+                    <div class="hotbar">
+                        <div class="slot" data-slot="1"></div>
+                        <div class="slot" data-slot="2"></div>
+                        <div class="slot" data-slot="3"></div>
+                    </div>
+                </div>
+
+                <!-- Abajo Derecha: Loot + 2 Botones -->
+                <div class="bottom-section right-section">
+                    <div id="loot-log" class="log-panel right-aligned"></div>
+                    <div class="button-group">
+                        <button id="btn-inv" class="btn-blue">Inv.</button>
+                        <button id="btn-sleep" class="btn-blue">Dormir</button>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
-    <!-- Scripts (El orden de carga es importante) -->
+    <!-- Scripts en orden estricto -->
     <script src="js/core/assets.js"></script>
     <script src="js/items.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/ui/ui.js"></script>
+    <script src="js/mechanics/inventory.js"></script>
+    <script src="js/mechanics/hook.js"></script>
+    <script src="js/mechanics/player.js"></script>
     <script src="js/world/world.js"></script>
     <script src="js/core/engine.js"></script>
 </body>
