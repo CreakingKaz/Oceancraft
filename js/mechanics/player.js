@@ -1,70 +1,46 @@
 const Player = {
-    x: 0,
-    y: 0,
-    size: 32,
-    speed: 150,
-    targetX: null,
-    targetY: null,
-    keys: { w: false, a: false, s: false, d: false },
-
+    x: 40, y: 40, size: 32, speed: 150,
+    targetX: 40, targetY: 40, isMoving: false, color: '#f1c40f',
+    
     init() {
-        this.x = World.raft.x + (World.raft.width / 2) - (this.size / 2);
-        this.y = World.raft.y + (World.raft.height / 2) - (this.size / 2);
-
-        window.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            if (this.keys.hasOwnProperty(key)) this.keys[key] = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            const key = e.key.toLowerCase();
-            if (this.keys.hasOwnProperty(key)) this.keys[key] = false;
-        });
-
-        Engine.canvas.addEventListener('mousedown', (e) => {
-            const rect = Engine.canvas.getBoundingClientRect();
-            this.targetX = e.clientX - rect.left - (this.size / 2);
-            this.targetY = e.clientY - rect.top - (this.size / 2);
-        });
+        // Empieza en el centro del primer cuadro de la balsa
+        this.x = World.tileSize / 2;
+        this.y = World.tileSize / 2;
+        this.targetX = this.x;
+        this.targetY = this.y;
     },
 
     update(deltaTime) {
-        let dx = 0; let dy = 0;
-
-        if (this.keys.w) dy -= 1;
-        if (this.keys.s) dy += 1;
-        if (this.keys.a) dx -= 1;
-        if (this.keys.d) dx += 1;
-
-        if (dx !== 0 || dy !== 0) {
-            const length = Math.sqrt(dx * dx + dy * dy);
-            dx /= length; dy /= length;
-            this.targetX = null;
-        } else if (this.targetX !== null && this.targetY !== null) {
-            const tDx = this.targetX - this.x;
-            const tDy = this.targetY - this.y;
-            const distance = Math.sqrt(tDx * tDx + tDy * tDy);
+        if (this.isMoving) {
+            let dx = this.targetX - this.x; 
+            let dy = this.targetY - this.y; 
+            let dist = Math.hypot(dx, dy);
             
-            if (distance > 5) {
-                dx = tDx / distance; dy = tDy / distance;
-            } else {
-                this.targetX = null; this.targetY = null;
+            if (dist > this.speed * deltaTime) { 
+                this.x += (dx / dist) * this.speed * deltaTime; 
+                this.y += (dy / dist) * this.speed * deltaTime; 
+            } else { 
+                this.x = this.targetX; 
+                this.y = this.targetY; 
+                this.isMoving = false; 
             }
         }
-
-        let newX = this.x + (dx * this.speed * deltaTime);
-        let newY = this.y + (dy * this.speed * deltaTime);
-
-        // Colisión estricta con la balsa
-        newX = Math.max(World.raft.x, Math.min(newX, World.raft.x + World.raft.width - this.size));
-        newY = Math.max(World.raft.y, Math.min(newY, World.raft.y + World.raft.height - this.size));
-
-        this.x = newX;
-        this.y = newY;
     },
 
     draw(ctx) {
-        if (Assets.images.jugador) {
-            ctx.drawImage(Assets.images.jugador, this.x, this.y, this.size, this.size);
-        }
+        // Sombra
+        ctx.fillStyle = 'rgba(0,0,0,0.4)'; 
+        ctx.beginPath(); 
+        ctx.arc(this.x, this.y + 15, 18, 0, Math.PI*2); 
+        ctx.fill();
+        
+        // Cuerpo
+        ctx.fillStyle = this.color; 
+        ctx.strokeStyle = '#2c3e50'; 
+        ctx.lineWidth = 3; 
+        ctx.beginPath(); 
+        ctx.arc(this.x, this.y, 16, 0, Math.PI * 2); 
+        ctx.fill(); 
+        ctx.stroke();
     }
 };
