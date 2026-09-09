@@ -1,242 +1,67 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize); resize();
+const Engine = {
+    canvas: null,
+    ctx: null,
+    lastTime: 0,
+    isRunning: false,
 
-let isGameRunning = false; let panoramaActive = true; let panoramaAngle = 0;
-let camera = { x: 0, y: 0, zoom: 1.5 }; 
-let playerStats = { hp: 100, energy: 100, hunger: 100, thirst: 100, toxicity: 100 };
-let floatingItems = []; let raftParticles = []; let entities = [];
-let gameTime = 8 * 60; let gameDay = 1; let difficulty = 'normal';
-let player = { x: 80, y: 80, targetX: 80, targetY: 80, speed: 2, icon: 'Kaz', color: '#ff4757', isMoving: false };
-let tileSize = 80; let raftTiles = []; let structures = [];
-let mouseWorldX = 0, mouseWorldY = 0; let currentSaveSlot = 1;
-let activeHook = null; const RENDER_CACHE = {};
+    async init() {
+        // Cargar todos los recursos (Las imágenes SVG que hace assets.js)
+        await Assets.loadAll();
+        
+        // Quitar pantalla de carga
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
 
-function preRenderSVG(id, svgStr) {
-    if(RENDER_CACHE[id]) return RENDER_CACHE[id];
-    let img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr); RENDER_CACHE[id] = img; return img;
-}
+        // Configurar el Canvas
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
 
-window.onload = () => {
-    generateWorld();
-    setTimeout(() => { document.getElementById('loading-bar').style.width = '100%';
-        setTimeout(() => { document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); requestAnimationFrame(panoramaLoop); }, 500);
-    }, 1000);
+        // Iniciar los demás módulos del juego
+        World.init();
+        UI.init();
+        AudioSystem.init();
+
+        // Iniciar el bucle del motor
+        this.isRunning = true;
+        requestAnimationFrame((time) => this.loop(time));
+    },
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        // Si la balsa ya existe, centrarla al redimensionar la ventana
+        if (World.raftExists) {
+            World.raft.x = this.canvas.width / 2 - World.raft.width / 2;
+            World.raft.y = this.canvas.height / 2 - World.raft.height / 2;
+        }
+    },
+
+    // Bucle Unificado: Resuelve el bug crítico donde el tiempo avanzaba pero la balsa desaparecía
+    loop(currentTime) {
+        if (!this.isRunning) return;
+
+        // Calcular deltaTime en segundos
+        const deltaTime = (currentTime - this.lastTime) / 1000; 
+        this.lastTime = currentTime;
+
+        // Actualizar lógicas si el mundo generó bien la balsa
+        if (World.raftExists) {
+            World.update(deltaTime);
+            AudioSystem.update(deltaTime);
+        }
+
+        UI.update();
+
+        // Dibujar frame
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        World.draw(this.ctx);
+
+        // Llamar al siguiente frame
+        requestAnimationFrame((time) => this.loop(time));
+    }
 };
 
-function panoramaLoop() {
-    if(!isGameRunning && panoramaActive) {
-        oceanPhase += 0.015; panoramaAngle += 0.002;
-        camera.x = 800 + Math.cos(panoramaAngle) * 400; camera.y = Math.sin(panoramaAngle) * 200 + Math.sin(oceanPhase) * 20;
-        drawWorldBackground(); requestAnimationFrame(panoramaLoop);
-    }
-}
-
-function resetWorldState() {
-    inventory = []; hotbar = [null, null, null];
-    playerStats = { hp: 100, energy: 100, hunger: 100, thirst: 100, toxicity: 100 };
-    gameTime = 8 * 60; gameDay = 1; itemsGatheredTotal = 0;
-    player.x = 80; player.y = 80; player.targetX = 80; player.targetY = 80; player.isMoving = false;
-    raftTiles = ['0,0', '0,1', '1,0', '1,1']; structures = [];
-    generateWorld();
-}
-
-function startNewGame() {
-    currentSaveSlot = 1; 
-    try { for(let i=1; i<=3; i++) { if(!localStorage.getItem('oceancraft_save_'+i)) { currentSaveSlot = i; break; } } } catch(e) {}
-    resetWorldState(); startGame();
-}
-
-function startGame() {
-    try {
-        player.icon = document.getElementById('player-icon').value || 'Kaz'; player.color = document.getElementById('player-color').value; difficulty = document.getElementById('difficulty-select').value;
-        document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
-        document.getElementById('ingame-options-actions').classList.remove('hidden');
-        camera.x = player.x; camera.y = player.y;
-        
-        if (inventory.length === 0) { giveItem('gancho_t1', 1); giveItem('papa', 2); }
-        if(inventory[0]) hotbar[0] = inventory[0].uid; if(inventory[1]) hotbar[1] = inventory[1].uid;
-        
-        renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); logEvent("El océano se expande ante ti.", "event");
-        isGameRunning = true; requestAnimationFrame(gameLoop);
-    } catch(err) { console.error("Error iniciando: ", err); }
-}
-
-function saveCurrentGame() {
-    let data = { inventory, hotbar, playerStats, gameTime, gameDay, difficulty, raftTiles, structures, itemsGatheredTotal, playerIcon: player.icon, playerColor: player.color, islands: islands };
-    try { localStorage.setItem('oceancraft_save_' + currentSaveSlot, JSON.stringify(data)); showNotification("Partida Guardada en Slot " + currentSaveSlot); AudioSys.play('pop'); } catch(e){}
-}
-
-function loadGameSlot(slot) {
-    let data = localStorage.getItem('oceancraft_save_' + slot);
-    if(data) {
-        let p = JSON.parse(data); inventory = p.inventory; hotbar = p.hotbar; playerStats = p.playerStats; gameTime = p.gameTime; gameDay = p.gameDay; difficulty = p.difficulty; raftTiles = p.raftTiles; structures = p.structures; itemsGatheredTotal = p.itemsGatheredTotal || 0; player.icon = p.playerIcon || 'Kaz'; player.color = p.playerColor || '#ff4757'; currentSaveSlot = slot;
-        if(p.islands) islands = p.islands; else generateWorld();
-        
-        document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
-        document.getElementById('ingame-options-actions').classList.remove('hidden');
-        camera.x = player.x; camera.y = player.y;
-        renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); isGameRunning = true; requestAnimationFrame(gameLoop);
-    } else { currentSaveSlot = slot; startNewGame(); }
-}
-
-function die() {
-    isGameRunning = false; document.getElementById('game-ui').classList.add('hidden'); document.getElementById('death-screen').classList.remove('hidden');
-    document.getElementById('death-days').innerText = gameDay; document.getElementById('death-items').innerText = itemsGatheredTotal;
-    document.getElementById('death-cause').innerText = playerStats.hp <= 0 ? "Moriste de daño físico." : "Tu cuerpo sucumbió a la intoxicación.";
-    try { localStorage.removeItem('oceancraft_save_' + currentSaveSlot); } catch(e){}
-}
-
-window.addEventListener('wheel', e => { 
-    if(!isGameRunning) return; // Bloquea el zoom en el menú principal
-    if(e.target.tagName !== 'CANVAS') return;
-    camera.zoom = Math.max(0.4, Math.min(camera.zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2.0)); 
-}, { passive: true });
-
-canvas.addEventListener('mousemove', e => { mouseWorldX = (e.clientX - canvas.width / 2) / camera.zoom + camera.x; mouseWorldY = (e.clientY - canvas.height / 2) / camera.zoom + camera.y; });
-
-function doPrimaryAction() {
-    let uid = hotbar[selectedSlot]; let item = inventory.find(i => i.uid === uid);
-    if (item && ITEMS_DB[item.id].cat === 'com') {
-        let base = ITEMS_DB[item.id]; playerStats.hunger = Math.min(100, playerStats.hunger + (base.val.h || 0)); playerStats.thirst = Math.min(100, playerStats.thirst + (base.val.w || 0)); 
-        if (base.val.tox) playerStats.toxicity += base.val.tox; removeItem(uid, 1); updateStatsUI(playerStats); AudioSys.play('pop');
-    }
-}
-
-canvas.addEventListener('click', (e) => {
-    if(!isGameRunning || e.target.tagName !== 'CANVAS') return;
-    let activeItem = hotbar[selectedSlot] ? inventory.find(i=>i.uid===hotbar[selectedSlot]) : null; let activeId = activeItem ? activeItem.id : null;
-    let raftSwayX = Math.cos(oceanPhase) * 5; let raftSwayY = Math.sin(oceanPhase * 1.5) * 5;
-    let localX = mouseWorldX - raftSwayX; let localY = mouseWorldY - raftSwayY;
-    let gridC = Math.floor(localX / tileSize); let gridR = Math.floor(localY / tileSize); let tileKey = `${gridR},${gridC}`;
-    let onIsland = islands.some(isl => Math.hypot(isl.x - localX, isl.y - localY) < isl.radius * 0.85);
-
-    if (activeId === 'botella_vacia' && !raftTiles.includes(tileKey) && !onIsland) { removeItem(hotbar[selectedSlot], 1); giveItem('agua_salada', 1); AudioSys.play('splash'); return; }
-
-    if (ITEMS_DB[activeId] && ITEMS_DB[activeId].cat === 'est') {
-        if (ITEMS_DB[activeId].buildType === 'floor') {
-            if (!raftTiles.includes(tileKey) && !onIsland) {
-                let adjacent = raftTiles.some(t => { let [r,c] = t.split(',').map(Number); return Math.abs(r-gridR) + Math.abs(c-gridC) === 1; });
-                if(adjacent || raftTiles.length === 0) { raftTiles.push(tileKey); removeItem(hotbar[selectedSlot], 1); AudioSys.play('build'); return; }
-            }
-        } else if (ITEMS_DB[activeId].buildType === 'prop') {
-            if (raftTiles.includes(tileKey) && !structures.find(s => s.r === gridR && s.c === gridC)) { structures.push({r: gridR, c: gridC, type: activeId}); removeItem(hotbar[selectedSlot], 1); AudioSys.play('build'); return; }
-        }
-    }
-    
-    if (activeId === 'martillo') {
-        let sIdx = structures.findIndex(s => s.r === gridR && s.c === gridC);
-        if (sIdx !== -1) { let removed = structures.splice(sIdx, 1)[0]; giveItem(removed.type, 1); AudioSys.play('pop'); return; }
-        // Protección Anti-Desaparición: No te deja destruir el último bloque
-        if (raftTiles.includes(tileKey) && raftTiles.length > 1) { raftTiles.splice(raftTiles.indexOf(tileKey), 1); giveItem('madera', 1); AudioSys.play('pop'); return; }
-    }
-
-    let clickedItemIndex = floatingItems.findIndex(i => Math.hypot(i.x - mouseWorldX, i.y - mouseWorldY) < i.size + 20);
-    if (clickedItemIndex !== -1) {
-        let item = floatingItems[clickedItemIndex]; let dist = Math.hypot(item.x - player.x, item.y - player.y);
-        if (dist < 120) { giveItem(item.type, 1); AudioSys.play('pickup'); floatingItems.splice(clickedItemIndex, 1); return; } 
-        else if (activeId && activeId.startsWith('gancho') && !activeHook) { 
-            let hookStats = ITEMS_DB[activeId];
-            if (dist <= hookStats.range) { activeHook = { x: player.x, y: player.y, tx: item.x, ty: item.y, targetIdx: clickedItemIndex, speed: hookStats.speed, state: 'thrown', type: activeId }; AudioSys.play('throw'); return; }
-        }
-    }
-
-    if(raftTiles.includes(tileKey) || onIsland) { player.targetX = localX; player.targetY = localY; player.isMoving = true; }
-});
-
-setInterval(() => {
-    if (!isGameRunning) return;
-    let mult = difficulty === 'hard' ? 1.5 : (difficulty === 'peaceful' ? 0.5 : 1); let emptyStats = 0;
-    playerStats.energy -= 0.5 * mult; playerStats.hunger -= 0.8 * mult; playerStats.thirst -= 1.2 * mult; playerStats.toxicity = Math.min(100, playerStats.toxicity + 0.8);
-    if (playerStats.energy <= 0) emptyStats++; if (playerStats.hunger <= 0) emptyStats++; if (playerStats.thirst <= 0) emptyStats++;
-    if (emptyStats === 1) playerStats.hp -= 1; else if (emptyStats >= 2) playerStats.hp -= 3;
-    updateStatsUI(playerStats); if (playerStats.toxicity <= 0 || playerStats.hp <= 0) die();
-}, 2500);
-
-setInterval(() => {
-    if(!isGameRunning) return;
-    let types = ['madera', 'plastico', 'hojas', 'arena', 'chatarra', 'algas']; if(Math.random() > 0.85) types.push('botella_vacia');
-    floatingItems.push({ type: types[Math.floor(Math.random() * types.length)], x: camera.x + (canvas.width / camera.zoom) / 2 + 100, y: camera.y + (Math.random() - 0.5) * (canvas.height / camera.zoom) * 2, size: 30, speed: 1.0 + Math.random() * 1.5, bobOffset: Math.random() * Math.PI * 2, caught: false });
-    if(Math.random() < 0.7) raftParticles.push({ x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 200, life: 1.0, speed: -1.5 - Math.random()*2 });
-    if(difficulty !== 'peaceful' && entities.length < 1 && Math.random() < 0.05) entities.push({ type: 'shark', x: camera.x - 300, y: camera.y, targetX: camera.x, targetY: camera.y, state: 'circling', angle: 0 });
-}, 1200);
-
-function update() {
-    if (player.isMoving) {
-        let dx = player.targetX - player.x; let dy = player.targetY - player.y; let dist = Math.hypot(dx, dy);
-        if (dist > 0 && dist > player.speed) { player.x += (dx / dist) * player.speed; player.y += (dy / dist) * player.speed; } 
-        else { player.x = player.targetX; player.y = player.targetY; player.isMoving = false; }
-    }
-    
-    if(activeHook) {
-        if (activeHook.state === 'thrown') {
-            let hdx = activeHook.tx - activeHook.x; let hdy = activeHook.ty - activeHook.y; let hDist = Math.hypot(hdx, hdy);
-            if (hDist > 0 && hDist > activeHook.speed) { activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; } else { activeHook.state = 'returning'; AudioSys.play('splash'); }
-        } else if (activeHook.state === 'returning') {
-            let hdx = player.x - activeHook.x; let hdy = player.y - activeHook.y; let hDist = Math.hypot(hdx, hdy);
-            floatingItems.forEach(f => { if (Math.hypot(f.x - activeHook.x, f.y - activeHook.y) < 60) { f.caught = true; f.x = activeHook.x; f.y = activeHook.y; f.speed = 0; } });
-            if (hDist > 0 && hDist > activeHook.speed) { activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; } 
-            else { floatingItems = floatingItems.filter(f => { if (f.caught) { giveItem(f.type, 1); AudioSys.play('pickup'); return false; } return true; }); activeHook = null; }
-        }
-    }
-
-    floatingItems.forEach((f, index) => { if(!f.caught) f.x -= f.speed; if (Math.hypot(f.x - camera.x, f.y - camera.y) > 2000) floatingItems.splice(index, 1); });
-    raftParticles.forEach((p, index) => { p.x += p.speed; p.life -= 0.015; if(p.life <= 0) raftParticles.splice(index, 1); });
-    entities.forEach(e => { if(e.type === 'shark') { e.angle += 0.01; e.targetX = Math.cos(e.angle)*250; e.targetY = Math.sin(e.angle)*250; e.x += (e.targetX - e.x) * 0.02; e.y += (e.targetY - e.y) * 0.02; } });
-
-    let nearWork = false; let nearFurnace = false;
-    structures.forEach(s => { let px = (s.c * tileSize) + tileSize/2; let py = (s.r * tileSize) + tileSize/2; if(Math.hypot(player.x - px, player.y - py) < tileSize * 1.5) { if(s.type === 'mesa_trabajo') nearWork = true; if(s.type === 'horno') nearFurnace = true; } });
-    document.getElementById('btn-craft-work').style.display = nearWork ? 'flex' : 'none'; document.getElementById('btn-craft-furnace').style.display = nearFurnace ? 'flex' : 'none';
-    
-    gameTime += 0.15; if(gameTime >= 24 * 60) { gameTime = 0; gameDay++; document.getElementById('ui-day').innerText = gameDay; }
-    document.getElementById('ui-clock').innerText = `${Math.floor(gameTime / 60).toString().padStart(2,'0')}:${Math.floor(gameTime % 60).toString().padStart(2,'0')}`;
-    
-    updateWorldEnvironment(difficulty);
-    camera.x += ((player.x + Math.cos(oceanPhase)*5) - camera.x) * 0.08; camera.y += ((player.y + Math.sin(oceanPhase*1.5)*5) - camera.y) * 0.08;
-}
-
-function drawWorldBackground() {
-    drawOceanBackground(ctx, canvas, camera);
-    drawIslands(ctx);
-    ctx.restore();
-}
-
-function draw() {
-    drawOceanBackground(ctx, canvas, camera);
-    drawIslands(ctx);
-
-    floatingItems.forEach(item => {
-        let bob = Math.sin(oceanPhase * 2 + item.bobOffset) * (weather.current==='STORM'? 10: 5); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(item.x, item.y + 10, item.size/2, 0, Math.PI*2); ctx.fill();
-        let base = ITEMS_DB[item.type]; let img = preRenderSVG(item.type, base.svg); if(img.complete) ctx.drawImage(img, item.x - item.size/2, item.y + bob - item.size/2, item.size, item.size);
-    });
-
-    if(activeHook) { ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(activeHook.x, activeHook.y); ctx.stroke(); let hBase = ITEMS_DB[activeHook.type]; let hImg = preRenderSVG(activeHook.type, hBase.svg); if(hImg.complete) { ctx.save(); ctx.translate(activeHook.x, activeHook.y); ctx.rotate(Math.atan2(activeHook.y - player.y, activeHook.x - player.x)); ctx.drawImage(hImg, -15, -15, 30, 30); ctx.restore(); } }
-    entities.forEach(e => { if(e.type === 'shark') { ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.angle); ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-20, 15); ctx.lineTo(-20, -15); ctx.fill(); ctx.restore(); } });
-
-    let raftSwayX = Math.cos(oceanPhase) * 5; let raftSwayY = Math.sin(oceanPhase * 1.5) * 5; ctx.save(); ctx.translate(raftSwayX, raftSwayY);
-    ctx.fillStyle = 'rgba(255,255,255,0.6)'; raftParticles.forEach(p => { ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 * p.life, 3 * p.life, 0, 0, Math.PI*2); ctx.fill(); });
-    
-    raftTiles.forEach(t => { let [r,c] = t.split(',').map(Number); let px = c * tileSize; let py = r * tileSize; ctx.fillStyle = '#b45309'; ctx.fillRect(px, py, tileSize, tileSize); ctx.fillStyle = '#92400e'; ctx.fillRect(px + 4, py + 4, tileSize - 8, tileSize - 8); ctx.strokeStyle = '#78350f'; ctx.lineWidth = 3; ctx.strokeRect(px, py, tileSize, tileSize); });
-    structures.forEach(s => { let px = s.c * tileSize; let py = s.r * tileSize; let base = ITEMS_DB[s.type]; let img = preRenderSVG(s.type, base.svg); if(img.complete) ctx.drawImage(img, px + 10, py + 10, tileSize-20, tileSize-20); });
-
-    let activeItem = hotbar[selectedSlot] ? inventory.find(i=>i.uid===hotbar[selectedSlot]) : null; let activeId = activeItem ? activeItem.id : null;
-    let localX = mouseWorldX - raftSwayX; let localY = mouseWorldY - raftSwayY; let hoverC = Math.floor(localX / tileSize); let hoverR = Math.floor(localY / tileSize); let hoverKey = `${hoverR},${hoverC}`; let onIsland = islands.some(isl => Math.hypot(isl.x - localX, isl.y - localY) < isl.radius * 0.85);
-    
-    if (ITEMS_DB[activeId] && ITEMS_DB[activeId].cat === 'est') {
-        let px = hoverC * tileSize; let py = hoverR * tileSize; let canBuild = false;
-        if(ITEMS_DB[activeId].buildType === 'floor') canBuild = !raftTiles.includes(hoverKey) && !onIsland && raftTiles.some(t => { let [r,c] = t.split(',').map(Number); return Math.abs(r-hoverR) + Math.abs(c-hoverC) === 1; });
-        if(ITEMS_DB[activeId].buildType === 'prop') canBuild = raftTiles.includes(hoverKey) && !structures.find(s => s.r === hoverR && s.c === hoverC);
-        ctx.fillStyle = canBuild ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)'; ctx.fillRect(px, py, tileSize, tileSize);
-    } else if (activeId === 'martillo') {
-        let px = hoverC * tileSize; let py = hoverR * tileSize; if(structures.find(s => s.r === hoverR && s.c === hoverC) || raftTiles.includes(hoverKey)) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+tileSize,py+tileSize); ctx.moveTo(px+tileSize,py); ctx.lineTo(px,py+tileSize); ctx.stroke(); }
-    }
-
-    if (player.isMoving) { ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.targetX, player.targetY); ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.setLineDash([8, 8]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = 'rgba(245, 158, 11, 0.8)'; ctx.beginPath(); ctx.arc(player.targetX, player.targetY, 6, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.arc(player.x, player.y + 15, 18, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = player.color; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(player.icon, player.x, player.y + 2); 
-    ctx.restore(); ctx.restore();
-    
-    let hour = gameTime / 60; let darkness = hour < 5 || hour >= 20 ? 0.6 : (hour >= 5 && hour < 7 ? 0.6 - ((hour - 5) / 2) * 0.6 : (hour >= 18 && hour < 20 ? ((hour - 18) / 2) * 0.6 : 0)); 
-    if (darkness > 0 || weather.fogDensity > 0 || weather.current === 'STORM') { let dVal = Math.min(0.8, darkness + (weather.current === 'STORM' ? 0.3 : 0)); if(dVal > 0) { ctx.fillStyle = `rgba(10, 15, 30, ${dVal})`; ctx.fillRect(0, 0, canvas.width, canvas.height); } if(weather.fogDensity > 0) { ctx.fillStyle = `rgba(148, 163, 184, ${weather.fogDensity})`; ctx.fillRect(0, 0, canvas.width, canvas.height); } }
-}
-function gameLoop() { update(); draw(); if(isGameRunning) requestAnimationFrame(gameLoop); }
+// Arrancar el motor cuando el documento cargue
+window.onload = () => Engine.init();
