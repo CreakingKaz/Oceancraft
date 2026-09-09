@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Oceancraft - Adventure Update</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
         <div style="width: 300px; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden;">
             <div id="loading-bar" style="width: 0%; height: 100%; background: #4ade80; transition: width 0.1s;"></div>
         </div>
-        <p style="color: #94a3b8; margin-top: 10px; font-weight: bold;">Cargando mundo...</p>
+        <p style="color: #94a3b8; margin-top: 10px; font-size: 24px;">Cargando mundo...</p>
     </div>
 
     <div id="main-menu" class="ui-layer hidden" style="z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; background: transparent;">
@@ -31,9 +31,9 @@
             <h2 style="margin-bottom: 20px; color: white;">Crear Nuevo Mundo</h2>
             <input type="text" id="world-name" class="input-field" placeholder="Nombre del mundo (opcional)" style="margin-bottom: 15px;">
             <select id="difficulty-select" class="input-field" style="margin-bottom: 25px; cursor: pointer;">
-                <option value="peaceful">Pacífico (Sin enemigos)</option>
-                <option value="normal" selected>Normal (Experiencia estándar)</option>
-                <option value="hard">Difícil (Más daño, tormentas)</option>
+                <option value="peaceful">Pacífico</option>
+                <option value="normal" selected>Normal</option>
+                <option value="hard">Difícil</option>
             </select>
             <div style="display: flex; gap: 10px; width: 100%;">
                 <button class="btn" style="flex: 1; background: #475569;" onclick="switchMenu('menu-home')">Volver</button>
@@ -50,36 +50,44 @@
         <div class="menu-box solid-ui hidden" id="menu-cosmetics" style="width: 650px; display: flex; flex-direction: row; gap: 20px; text-align: left;">
             <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 20px;">
                 <h2 style="margin-bottom: 20px; color: white;">Apariencia</h2>
-                <label style="color: #94a3b8; font-weight: bold;">Nombre (Max 3)</label>
-                <input type="text" id="player-icon" class="input-field" placeholder="Ej: Kaz" maxlength="3" value="Kaz" style="margin-bottom: 15px; text-align: left;" oninput="updatePreview()">
-                <label style="color: #94a3b8; font-weight: bold;">Color Principal</label>
+                <label style="color: #94a3b8; font-size: 20px;">Nombre (Max 3)</label>
+                <input type="text" id="player-icon" class="input-field" placeholder="Ej: Kaz" maxlength="3" value="Kaz" style="margin-bottom: 15px;" oninput="updatePreview()">
+                <label style="color: #94a3b8; font-size: 20px;">Color Principal</label>
                 <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
                     <input type="color" id="player-color" class="color-picker" value="#ff4757" oninput="updatePreview()">
-                    <span id="hex-display" style="color: white; font-family: monospace;">#ff4757</span>
+                    <span id="hex-display" style="color: white;">#ff4757</span>
                 </div>
                 <button class="btn" style="width: 100%; background: #475569;" onclick="switchMenu('menu-home')">Guardar</button>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.3); border-radius: 12px;">
                 <h3 style="color: #64748b; margin-bottom: 30px;">Vista Previa</h3>
-                <div id="preview-player" style="width: 120px; height: 120px; border-radius: 50%; background: #ff4757; display: flex; justify-content: center; align-items: center; border: 4px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: background 0.2s;">
-                    <span id="preview-text" style="color: white; font-weight: 900; font-size: 40px; transition: color 0.2s;">Kaz</span>
+                <div id="preview-player" style="width: 120px; height: 120px; border-radius: 50%; background: #ff4757; display: flex; justify-content: center; align-items: center; border: 4px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                    <span id="preview-text" style="color: white; font-size: 40px;">Kaz</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="death-screen" class="ui-layer hidden" style="background: rgba(153, 27, 27, 0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        <h1 style="color: #fca5a5; font-size: 4rem; font-weight: 900; text-transform: uppercase; letter-spacing: 5px;">Has Muerto</h1>
+        <h1 style="color: #fca5a5; font-size: 6rem;">HAS MUERTO</h1>
         <div class="solid-ui" style="padding: 30px; margin-top: 20px; text-align: center; min-width: 300px;">
             <h2 id="death-cause" style="color: white; margin-bottom: 20px;">El océano no perdona.</h2>
-            <p style="color: #cbd5e1; font-size: 1.2rem; margin-bottom: 5px;">Días sobrevividos: <span id="death-days" style="color: #f59e0b; font-weight: bold;">0</span></p>
-            <p style="color: #cbd5e1; font-size: 1.2rem; margin-bottom: 20px;">Ítems recolectados: <span id="death-items" style="color: #38bdf8; font-weight: bold;">0</span></p>
+            <p style="color: #cbd5e1; font-size: 24px;">Días: <span id="death-days" style="color: #f59e0b;">0</span></p>
+            <p style="color: #cbd5e1; font-size: 24px; margin-bottom: 20px;">Ítems: <span id="death-items" style="color: #38bdf8;">0</span></p>
             <button class="btn btn-primary" onclick="location.reload()">Volver al Menú</button>
         </div>
     </div>
 
     <div id="game-ui" class="ui-layer hidden" style="transition: transform 0.2s; transform-origin: center center;">
-        <div id="stats-history-panel" class="solid-ui">
+        
+        <!-- Botones OPC y GDR Arriba a la Izquierda -->
+        <div id="side-hud" class="solid-ui" style="position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; padding: 10px; z-index: 10;">
+            <button class="btn-text hud-btn" onclick="saveCurrentGame()">GDR</button>
+            <button class="btn-text hud-btn" onclick="toggleMenu('options-modal')">OPC</button>
+        </div>
+
+        <!-- Panel de Estadísticas debajo de los botones -->
+        <div id="stats-history-panel" class="solid-ui" style="position: absolute; top: 100px; left: 20px; width: 280px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
             <div class="time-header">Día <span id="ui-day">1</span> - <span id="ui-clock">08:00</span></div>
             <div class="stats-container">
                 <div class="stat-row"><span class="stat-icon" style="color:#ff4757;">VIDA</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hp" style="width: 100%; background: #ff4757;"></div></div></div>
@@ -91,26 +99,19 @@
             <div class="history-log" id="history-log"></div>
         </div>
         
-        <div id="side-hud" class="solid-ui" style="top: 20px; right: 20px; padding: 5px;">
-            <button class="btn-text" style="width:50px; height:50px;" onclick="saveCurrentGame()">GDR</button>
-            <button class="btn-text" style="width:50px; height:50px;" onclick="toggleMenu('options-modal')">OPC</button>
-        </div>
-        
         <div id="bottom-hud">
             <div id="contextual-crafting" style="display:flex; gap:10px; flex-direction:column; justify-content:flex-end;">
-                <button class="btn-text context-btn solid-ui" id="btn-craft-furnace" style="display:none; background: rgba(239, 68, 68, 0.3);" onclick="openCrafting('horno')">Horno</button>
-                <button class="btn-text context-btn solid-ui" id="btn-craft-work" style="display:none; background: rgba(245, 158, 11, 0.3);" onclick="openCrafting('mesa_trabajo')">Mesa</button>
-                <button class="btn-text context-btn solid-ui" id="btn-craft-basic" onclick="openCrafting('basic')">Básico</button>
+                <button class="btn-text hud-btn solid-ui" id="btn-craft-furnace" style="display:none; background: rgba(239, 68, 68, 0.3);" onclick="openCrafting('horno')">Horno</button>
+                <button class="btn-text hud-btn solid-ui" id="btn-craft-work" style="display:none; background: rgba(245, 158, 11, 0.3);" onclick="openCrafting('mesa_trabajo')">Mesa</button>
+                <button class="btn-text hud-btn solid-ui" id="btn-craft-basic" onclick="openCrafting('basic')">Básico</button>
             </div>
             
             <div style="display:flex; flex-direction:column; align-items:center;">
-                <!-- Control de Zoom -->
                 <div style="display:flex; align-items:center; background:#1e293b; border-radius:20px; padding: 2px 10px; margin-bottom: 8px; gap: 15px; border: 2px solid #334155;">
-                    <button class="btn-text" style="border:none; padding: 0 10px; background: transparent; font-size:18px;" onclick="camera.zoom=Math.max(0.4, camera.zoom-0.2)">-</button>
-                    <span style="color:white; font-size:12px; font-weight:bold;">Cámara</span>
-                    <button class="btn-text" style="border:none; padding: 0 10px; background: transparent; font-size:18px;" onclick="camera.zoom=Math.min(2.0, camera.zoom+0.2)">+</button>
+                    <button class="btn-text" style="border:none; padding: 0 10px; background: transparent; font-size:24px;" onclick="camera.zoom=Math.max(0.4, camera.zoom-0.2)">-</button>
+                    <span style="color:white; font-size:20px;">Cámara</span>
+                    <button class="btn-text" style="border:none; padding: 0 10px; background: transparent; font-size:24px;" onclick="camera.zoom=Math.min(2.0, camera.zoom+0.2)">+</button>
                 </div>
-                <!-- Hotbar -->
                 <div class="hotbar solid-ui">
                     <div class="hotbar-slot selected" id="slot-0" onclick="selectSlot(0)"></div>
                     <div class="hotbar-slot" id="slot-1" onclick="selectSlot(1)"></div>
@@ -118,96 +119,30 @@
                 </div>
             </div>
 
-            <button class="btn btn-primary solid-ui" id="action-btn" onclick="doPrimaryAction()" style="height: 60px; font-size: 18px;">Interactuar</button>
-            <button class="btn-text solid-ui" style="width: 70px; height: 70px; margin-left: 10px;" onclick="toggleMenu('inventory-modal')">INV</button>
+            <div style="display:flex; gap:10px; align-items:flex-end;">
+                <button class="btn btn-primary solid-ui" id="action-btn" onclick="doPrimaryAction()" style="height: 60px; padding: 0 20px;">Interactuar</button>
+                <button class="btn-text solid-ui hud-btn" onclick="toggleMenu('inventory-modal')">INV</button>
+            </div>
         </div>
 
         <div id="notifications"></div>
         <div id="loot-notifications"></div>
     </div>
 
-    <!-- Menú Inventario -->
-    <div id="inventory-modal" class="modal-wrapper hidden">
-        <div class="modal solid-ui">
-            <div class="modal-header">
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <h2>Inventario (<span id="inv-count">0</span>/15)</h2>
-                    <input type="text" id="inv-search" class="input-field" placeholder="Buscar por nombre..." style="padding: 8px; font-size: 14px;" oninput="renderInventory()">
-                </div>
-                <select id="inv-filter" onchange="renderInventory()" class="filter-select">
-                    <option value="recent">Más Recientes</option>
-                    <option value="qty">Mayor Cantidad</option>
-                    <option value="az">A - Z</option>
-                </select>
-                <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('inventory-modal')">X</button>
-            </div>
-            <div class="tabs">
-                <div class="tab active" onclick="setInvTab('todo', this)">Todo</div>
-                <div class="tab" onclick="setInvTab('mat', this)">Materiales</div>
-                <div class="tab" onclick="setInvTab('com', this)">Consumibles</div>
-                <div class="tab" onclick="setInvTab('herr', this)">Equipos</div>
-                <div class="tab" onclick="setInvTab('est', this)">Estructuras</div>
-            </div>
-            <div id="inv-grid" class="inventory-grid"></div>
-            <div id="lore-box" class="lore-box">
-                <p id="lore-text" style="color: #ccc;">Selecciona un ítem para inspeccionar.</p>
-                <div id="lore-actions" class="lore-actions"></div>
-            </div>
-        </div>
-    </div>
+    <!-- Modals simplificados para brevedad visual -->
+    <div id="inventory-modal" class="modal-wrapper hidden"><div class="modal solid-ui"><div class="modal-header"><div style="display: flex; flex-direction: column; gap: 8px;"><h2>Inventario (<span id="inv-count">0</span>/15)</h2><input type="text" id="inv-search" class="input-field" placeholder="Buscar..." oninput="renderInventory()"></div><select id="inv-filter" onchange="renderInventory()" class="filter-select"><option value="recent">Recientes</option><option value="qty">Cantidad</option><option value="az">A - Z</option></select><button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('inventory-modal')">X</button></div><div class="tabs"><div class="tab active" onclick="setInvTab('todo', this)">Todo</div><div class="tab" onclick="setInvTab('mat', this)">Mat.</div><div class="tab" onclick="setInvTab('com', this)">Com.</div><div class="tab" onclick="setInvTab('herr', this)">Herr.</div><div class="tab" onclick="setInvTab('est', this)">Est.</div></div><div id="inv-grid" class="inventory-grid"></div><div id="lore-box" class="lore-box"><p id="lore-text" style="color: #ccc;">Selecciona un ítem.</p><div id="lore-actions" class="lore-actions"></div></div></div></div>
 
-    <!-- Menú Crafteo -->
-    <div id="craft-modal" class="modal-wrapper hidden">
-        <div class="modal solid-ui">
-            <div class="modal-header">
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <h2 id="craft-title">Menú de Crafteo</h2>
-                    <input type="text" id="craft-search" class="input-field" placeholder="Buscar receta..." style="padding: 8px; font-size: 14px;" oninput="renderCrafting(currentStation)">
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
-                    <button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('craft-modal')">X</button>
-                    <label style="color: #a7f3d0; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                        <input type="checkbox" id="craft-toggle-afford" onchange="renderCrafting(currentStation)">
-                        Solo Crafteables
-                    </label>
-                </div>
-            </div>
-            <div class="tabs" id="craft-tabs">
-                <div class="tab active" onclick="setCraftTab('todo', this)">Todo</div>
-                <div class="tab" onclick="setCraftTab('mat', this)">Materiales</div>
-                <div class="tab" onclick="setCraftTab('herr', this)">Herramientas</div>
-                <div class="tab" onclick="setCraftTab('est', this)">Construcción</div>
-            </div>
-            <div class="inventory-grid" id="craft-grid" style="grid-template-columns: 1fr; gap: 10px;"></div>
-        </div>
-    </div>
+    <div id="craft-modal" class="modal-wrapper hidden"><div class="modal solid-ui"><div class="modal-header"><div style="display: flex; flex-direction: column; gap: 8px;"><h2 id="craft-title">Crafteo</h2><input type="text" id="craft-search" class="input-field" placeholder="Buscar..." oninput="renderCrafting(currentStation)"></div><div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;"><button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('craft-modal')">X</button><label style="color: #a7f3d0; cursor: pointer; display: flex; align-items: center; gap: 5px;"><input type="checkbox" id="craft-toggle-afford" onchange="renderCrafting(currentStation)">Solo Crafteables</label></div></div><div class="tabs" id="craft-tabs"><div class="tab active" onclick="setCraftTab('todo', this)">Todo</div><div class="tab" onclick="setCraftTab('mat', this)">Mat.</div><div class="tab" onclick="setCraftTab('herr', this)">Herr.</div><div class="tab" onclick="setCraftTab('est', this)">Est.</div></div><div class="inventory-grid" id="craft-grid" style="grid-template-columns: 1fr; gap: 10px;"></div></div></div>
 
-    <!-- Menú Opciones Avanzado -->
     <div id="options-modal" class="modal-wrapper hidden">
         <div class="modal solid-ui" style="max-height: 85vh; overflow-y: auto;">
             <div class="modal-header"><h2>Ajustes</h2><button class="btn-close btn-text" style="width:32px; height:32px;" onclick="toggleMenu('options-modal')">X</button></div>
             <div style="padding: 20px; display: flex; flex-direction: column; gap: 25px; text-align: left; color: white;">
-                
                 <div><h3 style="color:#38bdf8; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">Audio</h3>
-                <label>Volumen Maestro</label><input type="range" class="input-field" style="padding:0; height:5px;" min="0" max="1" step="0.1" value="1" onchange="AudioSys.volume = this.value">
-                <label style="margin-top:10px; display:block;">Música</label><input type="range" class="input-field" style="padding:0; height:5px;" min="0" max="1" step="0.1" value="0.5">
-                <label style="margin-top:10px; display:block;">Efectos (SFX)</label><input type="range" class="input-field" style="padding:0; height:5px;" min="0" max="1" step="0.1" value="1">
-                <label style="display:flex; align-items:center; gap:10px; margin-top:15px; cursor:pointer;"><input type="checkbox" checked> Subtítulos (On/Off)</label></div>
-
+                <label>Volumen Maestro</label><input type="range" class="input-field" style="padding:0; height:5px;" min="0" max="1" step="0.1" value="1" onchange="AudioSys.volume = this.value"></div>
                 <div><h3 style="color:#38bdf8; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">Pantalla e Interfaz</h3>
-                <button class="btn btn-text" style="width:100%; margin-bottom:15px;" onclick="document.documentElement.requestFullscreen()">Alternar Pantalla Completa</button>
-                <label>Límite de FPS (Ahorro Batería)</label>
-                <select class="input-field" style="margin-bottom:15px;"><option>30 FPS</option><option selected>60 FPS</option><option>120 FPS</option></select>
-                <label>Escala de Interfaz</label><input type="range" class="input-field" style="padding:0; height:5px;" min="0.8" max="1.3" step="0.1" value="1" onchange="document.getElementById('game-ui').style.transform = `scale(${this.value})`">
-                <label style="margin-top:10px; display:block;">Transparencia UI</label><input type="range" class="input-field" style="padding:0; height:5px;" min="0.5" max="1" step="0.1" value="1" onchange="document.getElementById('game-ui').style.opacity = this.value"></div>
-
-                <div><h3 style="color:#38bdf8; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">Controles</h3>
-                <button class="btn btn-text" style="width:100%;" onclick="alert('Sistema de reasignación en desarrollo.')">Reasignar Teclas</button></div>
-
-                <div><h3 style="color:#38bdf8; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">Accesibilidad</h3>
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;"><input type="checkbox"> Modo Daltónico (Paleta alterna)</label>
-                <label style="display:flex; align-items:center; gap:10px; margin-top:10px; cursor:pointer;"><input type="checkbox"> Reducir movimiento y parpadeo</label></div>
-
+                <button class="btn btn-text" style="width:100%; margin-bottom:15px;" onclick="document.documentElement.requestFullscreen()">Pantalla Completa</button>
+                <label>Escala de Interfaz</label><input type="range" class="input-field" style="padding:0; height:5px;" min="0.8" max="1.3" step="0.1" value="1" onchange="document.getElementById('game-ui').style.transform = `scale(${this.value})`"></div>
                 <div id="ingame-options-actions" class="hidden" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
                     <button class="btn btn-primary" onclick="saveCurrentGame(); toggleMenu('options-modal');">Guardar Partida</button>
                     <button class="btn" style="background: #ef4444;" onclick="location.reload()">Abandonar Partida</button>
@@ -220,7 +155,8 @@
     
     <script src="js/audio.js"></script>
     <script src="js/items.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/engine.js"></script>
+    <script src="js/world/world.js"></script>
+    <script src="js/ui/ui.js"></script>
+    <script src="js/core/engine.js"></script>
 </body>
 </html>

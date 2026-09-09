@@ -34,7 +34,7 @@ function renderLoadSlots() {
             let timeStr = `${Math.floor(p.gameTime / 60).toString().padStart(2,'0')}:${Math.floor(p.gameTime % 60).toString().padStart(2,'0')}`;
             div.innerHTML = `<div style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; text-align:left; cursor:pointer;" onclick="loadGameSlot(${i})">
                 <strong style="color:white;">Slot ${i} (${p.difficulty})</strong><br>
-                <span style="color:#94a3b8; font-size:13px;">Día ${p.gameDay} - ${timeStr} | Ítems: ${p.itemsGatheredTotal || 0}</span></div>
+                <span style="color:#94a3b8; font-size:18px;">Día ${p.gameDay} - ${timeStr} | Ítems: ${p.itemsGatheredTotal || 0}</span></div>
                 <button class="btn btn-text" style="color:#ef4444;" onclick="deleteSave(${i})">X</button>`;
         } else {
             div.innerHTML = `<div style="flex:1; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:8px; padding:15px; color:#64748b;">Slot ${i} Vacío</div>`;
@@ -110,9 +110,9 @@ function showLore(item, base) {
     selectedInvUID = item.uid; 
     let rarities = { 'mat': {n:'Común', bg:'rgba(148,163,184,0.2)', c:'#cbd5e1'}, 'com': {n:'Orgánico', bg:'rgba(34,197,94,0.2)', c:'#4ade80'}, 'herr': {n:'Utilidad', bg:'rgba(56,189,248,0.2)', c:'#7dd3fc'}, 'est': {n:'Estructura', bg:'rgba(245,158,11,0.2)', c:'#fcd34d'} };
     let r = rarities[base.cat];
-    document.getElementById('lore-text').innerHTML = `<div class="rarity-label" style="background:${r.bg}; color:${r.c};">${r.n}</div><br><strong style="color:#fff; font-size:20px;">${base.name}</strong><br><span style="color:#94a3b8; font-size: 14px;">${base.desc}</span>`;
+    document.getElementById('lore-text').innerHTML = `<div class="rarity-label" style="background:${r.bg}; color:${r.c};">${r.n}</div><br><strong style="color:#fff; font-size:24px;">${base.name}</strong><br><span style="color:#94a3b8; font-size: 18px;">${base.desc}</span>`;
     document.getElementById('lore-actions').innerHTML = `
-        <button class="btn btn-text" style="color: ${item.fav ? '#f59e0b' : '#fff'};" onclick="toggleFavorite('${item.uid}')">★ Fav</button>
+        <button class="btn btn-text" style="color: ${item.fav ? '#f59e0b' : '#fff'};" onclick="toggleFavorite('${item.uid}')">★</button>
         <button class="btn btn-text" style="color: #ef4444;" onclick="dropItem('${item.uid}')">Tirar 1</button>
         <button class="btn btn-text" onclick="equipToHotbar(0)">Eq. 1</button>
         <button class="btn btn-text" onclick="equipToHotbar(1)">Eq. 2</button>
@@ -174,8 +174,8 @@ function renderCrafting(station) {
         let base = ITEMS_DB[r.id]; let reqText = Object.keys(r.req).map(k => `${r.req[k]} ${ITEMS_DB[k].name}`).join(', ');
         let btn = document.createElement('button'); btn.className = 'btn btn-primary'; btn.style.display = 'flex'; btn.style.alignItems = 'center'; btn.style.gap = '10px'; btn.style.textAlign = 'left';
         let iconHtml = `<div style="width:40px;height:40px;flex-shrink:0;">${base.svg}</div>`;
-        if (!r.canAfford) { btn.style.opacity = '0.6'; btn.style.background = '#475569'; btn.innerHTML = `${iconHtml} <span><b>${base.name}</b><br><small style="color:#fca5a5;">Falta: ${reqText}</small></span>`; } 
-        else { btn.innerHTML = `${iconHtml} <span><b>${base.name}</b><br><small style="color:#a7f3d0;">Req: ${reqText}</small></span>`; }
+        if (!r.canAfford) { btn.style.opacity = '0.6'; btn.style.background = '#475569'; btn.innerHTML = `${iconHtml} <span><b>${base.name}</b><br><small style="color:#fca5a5; font-size:18px;">Falta: ${reqText}</small></span>`; } 
+        else { btn.innerHTML = `${iconHtml} <span><b>${base.name}</b><br><small style="color:#a7f3d0; font-size:18px;">Req: ${reqText}</small></span>`; }
         btn.onclick = () => {
             if(!r.canAfford) return showNotification("Materiales insuficientes.");
             for (let reqId in r.req) removeItemByName(reqId, r.req[reqId]); 

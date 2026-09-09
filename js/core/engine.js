@@ -3,46 +3,21 @@ const ctx = canvas.getContext('2d');
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 window.addEventListener('resize', resize); resize();
 
-let isGameRunning = false; let panoramaActive = true;
-let camera = { x: 0, y: 0, zoom: 1.5 }; let oceanPhase = 0; let panoramaAngle = 0;
+let isGameRunning = false; let panoramaActive = true; let panoramaAngle = 0;
+let camera = { x: 0, y: 0, zoom: 1.5 }; 
 let playerStats = { hp: 100, energy: 100, hunger: 100, thirst: 100, toxicity: 100 };
 let floatingItems = []; let raftParticles = []; let entities = [];
 let gameTime = 8 * 60; let gameDay = 1; let difficulty = 'normal';
 let player = { x: 80, y: 80, targetX: 80, targetY: 80, speed: 2, icon: 'Kaz', color: '#ff4757', isMoving: false };
 let tileSize = 80; let raftTiles = []; let structures = [];
 let mouseWorldX = 0, mouseWorldY = 0; let currentSaveSlot = 1;
-
-let weather = { current: 'CLEAR', target: 'CLEAR', progress: 1.0, fogDensity: 0 };
-const WEATHER_COLORS = { 'CLEAR': { top: [2, 132, 199], bottom: [12, 74, 110] }, 'STORM': { top: [7, 89, 133], bottom: [8, 47, 73] }, 'FOG': { top: [100, 116, 139], bottom: [71, 85, 105] } };
-let curTop = [...WEATHER_COLORS['CLEAR'].top], curBot = [...WEATHER_COLORS['CLEAR'].bottom];
 let activeHook = null; const RENDER_CACHE = {};
-let islands = [];
 
 function preRenderSVG(id, svgStr) {
     if(RENDER_CACHE[id]) return RENDER_CACHE[id];
     let img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr); RENDER_CACHE[id] = img; return img;
 }
 
-function generateWorld() {
-    islands = [];
-    for (let i = 0; i < 30; i++) {
-        let ix = (Math.random() - 0.5) * 15000;
-        let iy = (Math.random() - 0.5) * 15000;
-        // Área segura para la balsa inicial (sin islas)
-        if (Math.abs(ix) < 1000 && Math.abs(iy) < 1000) continue; 
-        
-        let radius = 250 + Math.random() * 400;
-        let points = [];
-        for (let j = 0; j < 16; j++) {
-            let angle = (j / 16) * Math.PI * 2;
-            let r = radius * (0.7 + Math.random() * 0.3);
-            points.push({ x: ix + Math.cos(angle) * r, y: iy + Math.sin(angle) * r });
-        }
-        islands.push({ x: ix, y: iy, radius: radius, points: points });
-    }
-}
-
-// Inicialización de Pantalla Panorámica
 window.onload = () => {
     generateWorld();
     setTimeout(() => { document.getElementById('loading-bar').style.width = '100%';
@@ -54,7 +29,7 @@ function panoramaLoop() {
     if(!isGameRunning && panoramaActive) {
         oceanPhase += 0.015; panoramaAngle += 0.002;
         camera.x = 800 + Math.cos(panoramaAngle) * 400; camera.y = Math.sin(panoramaAngle) * 200 + Math.sin(oceanPhase) * 20;
-        draw(); requestAnimationFrame(panoramaLoop);
+        drawWorldBackground(); requestAnimationFrame(panoramaLoop);
     }
 }
 
@@ -70,24 +45,18 @@ function resetWorldState() {
 function startNewGame() {
     currentSaveSlot = 1; 
     try { for(let i=1; i<=3; i++) { if(!localStorage.getItem('oceancraft_save_'+i)) { currentSaveSlot = i; break; } } } catch(e) {}
-    resetWorldState();
-    startGame();
+    resetWorldState(); startGame();
 }
 
 function startGame() {
     try {
         player.icon = document.getElementById('player-icon').value || 'Kaz'; player.color = document.getElementById('player-color').value; difficulty = document.getElementById('difficulty-select').value;
         document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
-        
-        // Habilitar los ajustes dentro del juego
         document.getElementById('ingame-options-actions').classList.remove('hidden');
-
-        // Centrar cámara en jugador (centro de la balsa)
         camera.x = player.x; camera.y = player.y;
         
         if (inventory.length === 0) { giveItem('gancho_t1', 1); giveItem('papa', 2); }
-        if(inventory[0]) hotbar[0] = inventory[0].uid; 
-        if(inventory[1]) hotbar[1] = inventory[1].uid;
+        if(inventory[0]) hotbar[0] = inventory[0].uid; if(inventory[1]) hotbar[1] = inventory[1].uid;
         
         renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); logEvent("El océano se expande ante ti.", "event");
         isGameRunning = true; requestAnimationFrame(gameLoop);
@@ -108,7 +77,6 @@ function loadGameSlot(slot) {
         document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
         document.getElementById('ingame-options-actions').classList.remove('hidden');
         camera.x = player.x; camera.y = player.y;
-        
         renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); isGameRunning = true; requestAnimationFrame(gameLoop);
     } else { currentSaveSlot = slot; startNewGame(); }
 }
@@ -120,8 +88,8 @@ function die() {
     try { localStorage.removeItem('oceancraft_save_' + currentSaveSlot); } catch(e){}
 }
 
-// Bloqueo de Zoom si estás dentro de un UI Modal
 window.addEventListener('wheel', e => { 
+    if(!isGameRunning) return; // Bloquea el zoom en el menú principal
     if(e.target.tagName !== 'CANVAS') return;
     camera.zoom = Math.max(0.4, Math.min(camera.zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2.0)); 
 }, { passive: true });
@@ -160,6 +128,7 @@ canvas.addEventListener('click', (e) => {
     if (activeId === 'martillo') {
         let sIdx = structures.findIndex(s => s.r === gridR && s.c === gridC);
         if (sIdx !== -1) { let removed = structures.splice(sIdx, 1)[0]; giveItem(removed.type, 1); AudioSys.play('pop'); return; }
+        // Protección Anti-Desaparición: No te deja destruir el último bloque
         if (raftTiles.includes(tileKey) && raftTiles.length > 1) { raftTiles.splice(raftTiles.indexOf(tileKey), 1); giveItem('madera', 1); AudioSys.play('pop'); return; }
     }
 
@@ -193,22 +162,21 @@ setInterval(() => {
     if(difficulty !== 'peaceful' && entities.length < 1 && Math.random() < 0.05) entities.push({ type: 'shark', x: camera.x - 300, y: camera.y, targetX: camera.x, targetY: camera.y, state: 'circling', angle: 0 });
 }, 1200);
 
-function lerpColor(c1, c2, t) { return [ Math.round(c1[0] + (c2[0]-c1[0])*t), Math.round(c1[1] + (c2[1]-c1[1])*t), Math.round(c1[2] + (c2[2]-c1[2])*t) ]; }
-
 function update() {
     if (player.isMoving) {
         let dx = player.targetX - player.x; let dy = player.targetY - player.y; let dist = Math.hypot(dx, dy);
-        if (dist > player.speed) { player.x += (dx / dist) * player.speed; player.y += (dy / dist) * player.speed; } else { player.x = player.targetX; player.y = player.targetY; player.isMoving = false; }
+        if (dist > 0 && dist > player.speed) { player.x += (dx / dist) * player.speed; player.y += (dy / dist) * player.speed; } 
+        else { player.x = player.targetX; player.y = player.targetY; player.isMoving = false; }
     }
     
     if(activeHook) {
         if (activeHook.state === 'thrown') {
             let hdx = activeHook.tx - activeHook.x; let hdy = activeHook.ty - activeHook.y; let hDist = Math.hypot(hdx, hdy);
-            if (hDist > activeHook.speed) { activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; } else { activeHook.state = 'returning'; AudioSys.play('splash'); }
+            if (hDist > 0 && hDist > activeHook.speed) { activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; } else { activeHook.state = 'returning'; AudioSys.play('splash'); }
         } else if (activeHook.state === 'returning') {
             let hdx = player.x - activeHook.x; let hdy = player.y - activeHook.y; let hDist = Math.hypot(hdx, hdy);
             floatingItems.forEach(f => { if (Math.hypot(f.x - activeHook.x, f.y - activeHook.y) < 60) { f.caught = true; f.x = activeHook.x; f.y = activeHook.y; f.speed = 0; } });
-            if (hDist > activeHook.speed) { activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; } 
+            if (hDist > 0 && hDist > activeHook.speed) { activeHook.x += (hdx/hDist)*activeHook.speed; activeHook.y += (hdy/hDist)*activeHook.speed; } 
             else { floatingItems = floatingItems.filter(f => { if (f.caught) { giveItem(f.type, 1); AudioSys.play('pickup'); return false; } return true; }); activeHook = null; }
         }
     }
@@ -224,25 +192,19 @@ function update() {
     gameTime += 0.15; if(gameTime >= 24 * 60) { gameTime = 0; gameDay++; document.getElementById('ui-day').innerText = gameDay; }
     document.getElementById('ui-clock').innerText = `${Math.floor(gameTime / 60).toString().padStart(2,'0')}:${Math.floor(gameTime % 60).toString().padStart(2,'0')}`;
     
-    if(Math.random() < 0.0005) { let weathers = ['CLEAR', 'STORM', 'FOG']; weather.target = weathers[Math.floor(Math.random()*weathers.length)]; if(difficulty === 'peaceful' && weather.target === 'STORM') weather.target = 'CLEAR'; weather.progress = 0; }
-    if (weather.progress < 1.0) { weather.progress += 0.002; curTop = lerpColor(curTop, WEATHER_COLORS[weather.target].top, weather.progress); curBot = lerpColor(curBot, WEATHER_COLORS[weather.target].bottom, weather.progress); weather.fogDensity += (weather.target === 'FOG' ? 0.005 : -0.005); weather.fogDensity = Math.max(0, Math.min(0.7, weather.fogDensity)); } else { weather.current = weather.target; }
-    
-    oceanPhase += weather.current === 'STORM' ? 0.08 : 0.04; camera.x += ((player.x + Math.cos(oceanPhase)*5) - camera.x) * 0.08; camera.y += ((player.y + Math.sin(oceanPhase*1.5)*5) - camera.y) * 0.08;
+    updateWorldEnvironment(difficulty);
+    camera.x += ((player.x + Math.cos(oceanPhase)*5) - camera.x) * 0.08; camera.y += ((player.y + Math.sin(oceanPhase*1.5)*5) - camera.y) * 0.08;
+}
+
+function drawWorldBackground() {
+    drawOceanBackground(ctx, canvas, camera);
+    drawIslands(ctx);
+    ctx.restore();
 }
 
 function draw() {
-    let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 100, canvas.width/2, canvas.height/2, canvas.width);
-    grad.addColorStop(0, `rgb(${curTop[0]},${curTop[1]},${curTop[2]})`); grad.addColorStop(1, `rgb(${curBot[0]},${curBot[1]},${curBot[2]})`); ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
-    
-    ctx.strokeStyle = `rgba(255,255,255,${weather.current === 'STORM' ? 0.15 : 0.05})`; ctx.lineWidth = 2;
-    for(let i = -1000; i < 1000; i += 100) { ctx.beginPath(); for(let j = -1000; j < 1000; j += 50) ctx.lineTo(j, i + Math.sin((j + oceanPhase * 150)*0.01)*20); ctx.stroke(); }
-    
-    islands.forEach(isl => {
-        ctx.fillStyle = '#fde047'; ctx.beginPath(); isl.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.fill();
-        ctx.fillStyle = '#4ade80'; ctx.beginPath(); isl.points.forEach((p, i) => { let ix = isl.x + (p.x - isl.x) * 0.75; let iy = isl.y + (p.y - isl.y) * 0.75; i === 0 ? ctx.moveTo(ix, iy) : ctx.lineTo(ix, iy); }); ctx.fill();
-    });
+    drawOceanBackground(ctx, canvas, camera);
+    drawIslands(ctx);
 
     floatingItems.forEach(item => {
         let bob = Math.sin(oceanPhase * 2 + item.bobOffset) * (weather.current==='STORM'? 10: 5); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(item.x, item.y + 10, item.size/2, 0, Math.PI*2); ctx.fill();
@@ -271,7 +233,7 @@ function draw() {
     }
 
     if (player.isMoving) { ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.targetX, player.targetY); ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.setLineDash([8, 8]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = 'rgba(245, 158, 11, 0.8)'; ctx.beginPath(); ctx.arc(player.targetX, player.targetY, 6, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.arc(player.x, player.y + 15, 18, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = player.color; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Nunito'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(player.icon, player.x, player.y); 
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.arc(player.x, player.y + 15, 18, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = player.color; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(player.icon, player.x, player.y + 2); 
     ctx.restore(); ctx.restore();
     
     let hour = gameTime / 60; let darkness = hour < 5 || hour >= 20 ? 0.6 : (hour >= 5 && hour < 7 ? 0.6 - ((hour - 5) / 2) * 0.6 : (hour >= 18 && hour < 20 ? ((hour - 18) / 2) * 0.6 : 0)); 
