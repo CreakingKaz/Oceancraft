@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oceancraft - UI Moderno</title>
-    <!-- Fuente moderna y limpia para coincidir con la imagen -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+    <!-- El ?v=2 obliga al navegador a descargar el CSS nuevo ignorando la caché -->
+    <link rel="stylesheet" href="css/styles.css?v=2">
 </head>
 <body>
     <div id="loading-screen">Generando mundo...</div>
@@ -15,8 +15,7 @@
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui-layer">
-            
-            <!-- PANEL SUPERIOR IZQUIERDO (Tiempo, Estadísticas y Log) -->
+            <!-- PANEL SUPERIOR IZQUIERDO -->
             <div class="panel-left">
                 <div id="time-display">Día 1 - 08:00</div>
                 <div class="divider"></div>
@@ -30,36 +29,30 @@
                 </div>
 
                 <div class="divider"></div>
-                
-                <!-- Log de eventos -->
                 <div id="event-log"></div>
             </div>
 
-            <!-- BOTÓN OPCIONES (Arriba Derecha) -->
+            <!-- BOTÓN OPCIONES -->
             <button id="btn-opc" class="btn-top-right">OPC</button>
 
             <!-- INTERFAZ INFERIOR CENTRAL -->
             <div class="panel-bottom">
-                
-                <!-- Controles de Cámara -->
                 <div class="camera-controls">
                     <button id="cam-minus">-</button>
                     <span>Cámara</span>
                     <button id="cam-plus">+</button>
                 </div>
 
-                <!-- Botones y Hotbar -->
                 <div class="bottom-actions">
                     <div class="side-buttons">
                         <button class="btn-side bg-purple">Horno</button>
-                        <button class="btn-side bg-darkblue">Básico</button>
+                        <button id="btn-crafting" class="btn-side bg-darkblue">Básico</button>
                     </div>
 
                     <div class="hotbar">
                         <div class="slot" data-slot="1"></div>
                         <div class="slot active-slot" data-slot="2">
-                            <img src="" style="display:none;">
-                            <span class="slot-qty">x1</span>
+                            <span class="slot-qty">x0</span>
                         </div>
                         <div class="slot" data-slot="3"></div>
                     </div>
@@ -71,11 +64,20 @@
                 </div>
             </div>
 
-            <!-- MENÚS PREPARADOS (Ocultos por defecto) -->
+            <!-- MENÚS OCULTOS -->
             <div id="menu-overlay" class="hidden">
+                <!-- Menú de Crafteo -->
+                <div id="crafting-menu" class="menu-window hidden">
+                    <h2>Crafteo Básico</h2>
+                    <div class="crafting-grid" id="crafting-list">
+                        <!-- Generado por JS -->
+                    </div>
+                    <button class="btn-close">Cerrar</button>
+                </div>
+
                 <div id="inventory-menu" class="menu-window hidden">
                     <h2>Inventario</h2>
-                    <div class="inv-grid"></div>
+                    <div class="inv-grid">Aún en desarrollo...</div>
                     <button class="btn-close">Cerrar</button>
                 </div>
                 <div id="options-menu" class="menu-window hidden">
@@ -84,16 +86,17 @@
                     <button class="btn-close">Cerrar</button>
                 </div>
             </div>
-
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script src="js/core/assets.js"></script>
     <script src="js/items.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/ui/ui.js"></script>
     <script src="js/ui/menus.js"></script>
     <script src="js/mechanics/inventory.js"></script>
+    <script src="js/mechanics/crafting.js"></script> <!-- NUEVO SCRIPT -->
     <script src="js/mechanics/hook.js"></script>
     <script src="js/mechanics/debris.js"></script>
     <script src="js/mechanics/player.js"></script>
