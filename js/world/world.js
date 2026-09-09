@@ -9,22 +9,30 @@ const World = {
     workstations: [],
 
     init() {
-        this.raft.x = window.innerWidth / 2 - this.raft.width / 2;
-        this.raft.y = window.innerHeight / 2 - this.raft.height / 2;
-        this.raftExists = true;
-        
-        // Colocamos una mesa de crafteo en la balsa
-        this.workstations.push({
-            id: 'Mesa de Trabajo',
-            x: this.raft.x + 20,
-            y: this.raft.y + 20,
-            size: 40
-        });
-
+        // ... tu código anterior
         Player.init();
+        Hook.init(); // NUEVO
         UI.addActionLog("El viaje comienza...");
     },
 
+    update(deltaTime) {
+        // ... tu código anterior
+        Player.update(deltaTime);
+        Debris.update(deltaTime); // NUEVO
+        Hook.update(deltaTime); // NUEVO
+        // ...
+    },
+
+    draw(ctx) {
+        // ... tu código anterior de las olas y partículas
+
+        Debris.draw(ctx); // Dibujar basura ANTES de la balsa para que quede en el agua
+        
+        // ... tu código anterior que dibuja la balsa y el jugador
+
+        Hook.draw(ctx); // Dibujar gancho al final para que quede por encima de todo
+    },
+    
     update(deltaTime) {
         this.time += deltaTime;
         Player.update(deltaTime);
