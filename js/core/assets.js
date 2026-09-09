@@ -1,60 +1,40 @@
 const Assets = {
     images: {},
-
-    // Generamos las imágenes mediante código SVG puro (Vectorial)
-    // Esto cumple la regla de "Todo hecho por IA" sin descargar PNGs.
     svgData: {
-        // Modelo de la Balsa (Madera con tablones)
         balsa: `
-            <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
-                <rect width="150" height="150" fill="#8B4513"/>
-                <line x1="30" y1="0" x2="30" y2="150" stroke="#5C2E0B" stroke-width="4"/>
-                <line x1="60" y1="0" x2="60" y2="150" stroke="#5C2E0B" stroke-width="4"/>
-                <line x1="90" y1="0" x2="90" y2="150" stroke="#5C2E0B" stroke-width="4"/>
-                <line x1="120" y1="0" x2="120" y2="150" stroke="#5C2E0B" stroke-width="4"/>
-                <!-- Detalles de clavos -->
-                <circle cx="15" cy="15" r="2" fill="#333"/>
-                <circle cx="45" cy="135" r="2" fill="#333"/>
-                <circle cx="75" cy="15" r="2" fill="#333"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+                <rect width="200" height="200" fill="#8B4513"/>
+                <line x1="40" y1="0" x2="40" y2="200" stroke="#5C2E0B" stroke-width="4"/>
+                <line x1="80" y1="0" x2="80" y2="200" stroke="#5C2E0B" stroke-width="4"/>
+                <line x1="120" y1="0" x2="120" y2="200" stroke="#5C2E0B" stroke-width="4"/>
+                <line x1="160" y1="0" x2="160" y2="200" stroke="#5C2E0B" stroke-width="4"/>
             </svg>`,
-        
-        // Modelo del Jugador (Personaje bloque)
         jugador: `
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
-                <!-- Cabeza -->
-                <rect x="10" y="4" width="12" height="12" fill="#FAD6B1"/>
-                <!-- Ojos -->
-                <rect x="12" y="8" width="2" height="2" fill="#000"/>
-                <rect x="18" y="8" width="2" height="2" fill="#000"/>
-                <!-- Cuerpo (Camisa azul) -->
-                <rect x="8" y="16" width="16" height="10" fill="#3498DB"/>
-                <!-- Piernas -->
-                <rect x="10" y="26" width="4" height="6" fill="#1ABC9C"/>
-                <rect x="18" y="26" width="4" height="6" fill="#1ABC9C"/>
+                <!-- Personaje circular visto desde arriba -->
+                <circle cx="16" cy="16" r="14" fill="#f1c40f" stroke="#2c3e50" stroke-width="3"/>
+                <circle cx="16" cy="16" r="6" fill="#e67e22"/>
+            </svg>`,
+        mesa: `
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+                <rect width="40" height="40" fill="#7f8c8d" stroke="#2c3e50" stroke-width="4"/>
+                <circle cx="20" cy="20" r="10" fill="#bdc3c7"/>
             </svg>`
     },
 
     async loadAll() {
-        // Cargar balsa
         await this.loadSVG('balsa', this.svgData.balsa);
-        // Cargar jugador
         await this.loadSVG('jugador', this.svgData.jugador);
-        
+        await this.loadSVG('mesa', this.svgData.mesa);
         console.log("Assets vectoriales generados por IA cargados.");
     },
 
     loadSVG(name, svgString) {
         return new Promise((resolve) => {
             const img = new Image();
-            // Convertimos el texto SVG en una imagen legible por el navegador
             const blob = new Blob([svgString], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            
-            img.onload = () => {
-                this.images[name] = img;
-                resolve();
-            };
-            img.src = url;
+            img.onload = () => { this.images[name] = img; resolve(); };
+            img.src = URL.createObjectURL(blob);
         });
     }
 };
