@@ -8,7 +8,7 @@ const ITEMS_DB = {
     'hojas': { cat: 'mat', name: 'Hojas', desc: 'Material trenzable.', color: '#2ecc71', svg: '<svg viewBox="0 0 100 100"><path d="M50 20 Q80 50 50 80 Q20 50 50 20" fill="#27ae60"/></svg>' },
     'arena': { cat: 'mat', name: 'Arena', desc: 'Para vidrio.', color: '#f1c40f', svg: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" fill="#f39c12"/></svg>' },
     'chatarra': { cat: 'mat', name: 'Chatarra', desc: 'Metal oxidado.', color: '#95a5a6', svg: '<svg viewBox="0 0 100 100"><polygon points="30,30 70,40 60,70 20,60" fill="#7f8c8d"/></svg>' },
-    'algas': { cat: 'mat', name: 'Algas', desc: 'Pegajoso.', color: '#16a085', svg: '<svg viewBox="0 0 100 100"><path d="M40 90 Q50 50 40 10 Q60 50 60 90" stroke="#1abc9c" stroke-width="10" fill="none"/></svg>' },
+    'algas': { cat: 'mat', name: 'Algas', desc: 'Pegajoso.', color: '#1abc9c', svg: '<svg viewBox="0 0 100 100"><path d="M40 90 Q50 50 40 10 Q60 50 60 90" stroke="#1abc9c" stroke-width="10" fill="none"/></svg>' },
     // Com
     'papa': { cat: 'com', name: 'Papa Cruda', desc: 'Sana poco.', color: '#d35400', svg: '<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="20" ry="15" fill="#e67e22"/></svg>', val: { h: 10, tox: 5 } },
     'agua_salada': { cat: 'com', name: 'Agua Salada', desc: 'No la bebas.', color: '#2980b9', svg: '<svg viewBox="0 0 100 100"><rect x="40" y="30" width="20" height="40" fill="#3498db"/><rect x="40" y="40" width="20" height="30" fill="#2980b9"/></svg>', val: { w: 5, tox: 25 } },
@@ -35,23 +35,28 @@ let hotbar = [null, null, null];
 let itemsGatheredTotal = 0;
 
 function giveItem(id, qty = 1) {
+    let givenCount = 0;
     while(qty > 0) {
         let existing = inventory.find(i => i.id === id && i.qty < MAX_STACK);
         if (existing) {
-            existing.qty++; qty--;
+            existing.qty++; qty--; givenCount++;
         } else if (inventory.length < MAX_SLOTS) {
             let base = ITEMS_DB[id];
             inventory.push({ id, qty: 1, uid: Date.now() + Math.random().toString(), fav: false, dur: base.maxDur || null });
-            qty--;
+            qty--; givenCount++;
         } else {
-            showNotification("Inventario lleno!");
-            return false;
+            showNotification("Inventario lleno!"); break;
         }
     }
-    itemsGatheredTotal++;
-    if(typeof renderInventory === 'function') renderInventory();
-    if(typeof renderHotbarUI === 'function') renderHotbarUI();
-    return true;
+    
+    if (givenCount > 0) {
+        itemsGatheredTotal += givenCount;
+        showLootNotification(`+${givenCount} ${ITEMS_DB[id].name}`, ITEMS_DB[id].color);
+        if(typeof renderInventory === 'function') renderInventory();
+        if(typeof renderHotbarUI === 'function') renderHotbarUI();
+        return true;
+    }
+    return false;
 }
 
 function removeItem(uid, qty) {

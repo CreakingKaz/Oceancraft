@@ -69,6 +69,12 @@ function showNotification(text) {
     c.appendChild(t); setTimeout(() => t.remove(), 3000);
 }
 
+function showLootNotification(text, color) {
+    let c = document.getElementById('loot-notifications');
+    let t = document.createElement('div'); t.className = 'loot-toast'; t.style.color = color || '#4ade80'; t.innerText = text;
+    c.appendChild(t); setTimeout(() => t.remove(), 2500);
+}
+
 function setInvTab(tab, el) { currentInvTab = tab; document.querySelectorAll('#inventory-modal .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderInventory(); }
 function setCraftTab(tab, el) { currentCraftTab = tab; document.querySelectorAll('#craft-modal .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderCrafting(currentStation); }
 function openCrafting(station) { currentStation = station; document.getElementById('craft-title').innerText = station.toUpperCase(); toggleMenu('craft-modal'); }

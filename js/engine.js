@@ -8,26 +8,43 @@ let camera = { x: 0, y: 0, zoom: 1.5 }; let oceanPhase = 0; let panoramaAngle = 
 let playerStats = { hp: 100, energy: 100, hunger: 100, thirst: 100, toxicity: 100 };
 let floatingItems = []; let raftParticles = []; let entities = [];
 let gameTime = 8 * 60; let gameDay = 1; let difficulty = 'normal';
-let player = { x: 0, y: 0, targetX: 0, targetY: 0, speed: 2, icon: 'Kaz', color: '#ff4757', isMoving: false };
-let tileSize = 80; let raftTiles = ['0,0', '0,1', '1,0', '1,1']; let structures = [];
+let player = { x: 80, y: 80, targetX: 80, targetY: 80, speed: 2, icon: 'Kaz', color: '#ff4757', isMoving: false };
+let tileSize = 80; let raftTiles = []; let structures = [];
 let mouseWorldX = 0, mouseWorldY = 0; let currentSaveSlot = 1;
 
 let weather = { current: 'CLEAR', target: 'CLEAR', progress: 1.0, fogDensity: 0 };
 const WEATHER_COLORS = { 'CLEAR': { top: [2, 132, 199], bottom: [12, 74, 110] }, 'STORM': { top: [7, 89, 133], bottom: [8, 47, 73] }, 'FOG': { top: [100, 116, 139], bottom: [71, 85, 105] } };
 let curTop = [...WEATHER_COLORS['CLEAR'].top], curBot = [...WEATHER_COLORS['CLEAR'].bottom];
 let activeHook = null; const RENDER_CACHE = {};
-
-let islands = [{x: 800, y: 0, radius: 250, points: []}];
-islands.forEach(isl => {
-    for(let i = 0; i < 16; i++) { let angle = (i / 16) * Math.PI * 2; let r = isl.radius * (0.7 + Math.random() * 0.3); isl.points.push({x: isl.x + Math.cos(angle) * r, y: isl.y + Math.sin(angle) * r}); }
-});
+let islands = [];
 
 function preRenderSVG(id, svgStr) {
     if(RENDER_CACHE[id]) return RENDER_CACHE[id];
     let img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr); RENDER_CACHE[id] = img; return img;
 }
 
+function generateWorld() {
+    islands = [];
+    for (let i = 0; i < 30; i++) {
+        let ix = (Math.random() - 0.5) * 15000;
+        let iy = (Math.random() - 0.5) * 15000;
+        // Área segura para la balsa inicial (sin islas)
+        if (Math.abs(ix) < 1000 && Math.abs(iy) < 1000) continue; 
+        
+        let radius = 250 + Math.random() * 400;
+        let points = [];
+        for (let j = 0; j < 16; j++) {
+            let angle = (j / 16) * Math.PI * 2;
+            let r = radius * (0.7 + Math.random() * 0.3);
+            points.push({ x: ix + Math.cos(angle) * r, y: iy + Math.sin(angle) * r });
+        }
+        islands.push({ x: ix, y: iy, radius: radius, points: points });
+    }
+}
+
+// Inicialización de Pantalla Panorámica
 window.onload = () => {
+    generateWorld();
     setTimeout(() => { document.getElementById('loading-bar').style.width = '100%';
         setTimeout(() => { document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); requestAnimationFrame(panoramaLoop); }, 500);
     }, 1000);
@@ -41,9 +58,19 @@ function panoramaLoop() {
     }
 }
 
+function resetWorldState() {
+    inventory = []; hotbar = [null, null, null];
+    playerStats = { hp: 100, energy: 100, hunger: 100, thirst: 100, toxicity: 100 };
+    gameTime = 8 * 60; gameDay = 1; itemsGatheredTotal = 0;
+    player.x = 80; player.y = 80; player.targetX = 80; player.targetY = 80; player.isMoving = false;
+    raftTiles = ['0,0', '0,1', '1,0', '1,1']; structures = [];
+    generateWorld();
+}
+
 function startNewGame() {
     currentSaveSlot = 1; 
     try { for(let i=1; i<=3; i++) { if(!localStorage.getItem('oceancraft_save_'+i)) { currentSaveSlot = i; break; } } } catch(e) {}
+    resetWorldState();
     startGame();
 }
 
@@ -52,9 +79,13 @@ function startGame() {
         player.icon = document.getElementById('player-icon').value || 'Kaz'; player.color = document.getElementById('player-color').value; difficulty = document.getElementById('difficulty-select').value;
         document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
         
+        // Habilitar los ajustes dentro del juego
+        document.getElementById('ingame-options-actions').classList.remove('hidden');
+
+        // Centrar cámara en jugador (centro de la balsa)
         camera.x = player.x; camera.y = player.y;
-        giveItem('gancho_t1', 1); giveItem('papa', 2); 
         
+        if (inventory.length === 0) { giveItem('gancho_t1', 1); giveItem('papa', 2); }
         if(inventory[0]) hotbar[0] = inventory[0].uid; 
         if(inventory[1]) hotbar[1] = inventory[1].uid;
         
@@ -64,7 +95,7 @@ function startGame() {
 }
 
 function saveCurrentGame() {
-    let data = { inventory, hotbar, playerStats, gameTime, gameDay, difficulty, raftTiles, structures, itemsGatheredTotal, playerIcon: player.icon, playerColor: player.color };
+    let data = { inventory, hotbar, playerStats, gameTime, gameDay, difficulty, raftTiles, structures, itemsGatheredTotal, playerIcon: player.icon, playerColor: player.color, islands: islands };
     try { localStorage.setItem('oceancraft_save_' + currentSaveSlot, JSON.stringify(data)); showNotification("Partida Guardada en Slot " + currentSaveSlot); AudioSys.play('pop'); } catch(e){}
 }
 
@@ -72,8 +103,12 @@ function loadGameSlot(slot) {
     let data = localStorage.getItem('oceancraft_save_' + slot);
     if(data) {
         let p = JSON.parse(data); inventory = p.inventory; hotbar = p.hotbar; playerStats = p.playerStats; gameTime = p.gameTime; gameDay = p.gameDay; difficulty = p.difficulty; raftTiles = p.raftTiles; structures = p.structures; itemsGatheredTotal = p.itemsGatheredTotal || 0; player.icon = p.playerIcon || 'Kaz'; player.color = p.playerColor || '#ff4757'; currentSaveSlot = slot;
+        if(p.islands) islands = p.islands; else generateWorld();
+        
         document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); panoramaActive = false;
+        document.getElementById('ingame-options-actions').classList.remove('hidden');
         camera.x = player.x; camera.y = player.y;
+        
         renderHotbarUI(); selectSlot(0); updateStatsUI(playerStats); isGameRunning = true; requestAnimationFrame(gameLoop);
     } else { currentSaveSlot = slot; startNewGame(); }
 }
@@ -85,7 +120,12 @@ function die() {
     try { localStorage.removeItem('oceancraft_save_' + currentSaveSlot); } catch(e){}
 }
 
-window.addEventListener('wheel', e => { camera.zoom = Math.max(0.4, Math.min(camera.zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2.0)); }, { passive: true });
+// Bloqueo de Zoom si estás dentro de un UI Modal
+window.addEventListener('wheel', e => { 
+    if(e.target.tagName !== 'CANVAS') return;
+    camera.zoom = Math.max(0.4, Math.min(camera.zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2.0)); 
+}, { passive: true });
+
 canvas.addEventListener('mousemove', e => { mouseWorldX = (e.clientX - canvas.width / 2) / camera.zoom + camera.x; mouseWorldY = (e.clientY - canvas.height / 2) / camera.zoom + camera.y; });
 
 function doPrimaryAction() {
@@ -97,7 +137,7 @@ function doPrimaryAction() {
 }
 
 canvas.addEventListener('click', (e) => {
-    if(!isGameRunning) return;
+    if(!isGameRunning || e.target.tagName !== 'CANVAS') return;
     let activeItem = hotbar[selectedSlot] ? inventory.find(i=>i.uid===hotbar[selectedSlot]) : null; let activeId = activeItem ? activeItem.id : null;
     let raftSwayX = Math.cos(oceanPhase) * 5; let raftSwayY = Math.sin(oceanPhase * 1.5) * 5;
     let localX = mouseWorldX - raftSwayX; let localY = mouseWorldY - raftSwayY;
