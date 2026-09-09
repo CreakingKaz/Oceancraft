@@ -1,85 +1,55 @@
 const Crafting = {
-    // Aquí puedes agregar todas las recetas futuras del juego
-    recipes: [
-        {
-            id: 'tabla_refinada',
-            name: 'Tabla Refinada',
-            cost: { 'MADERA': 2 },
-            result: 'TABLA'
-        },
-        {
-            id: 'cuerda',
-            name: 'Cuerda Fuerte',
-            cost: { 'PLASTICO': 2 },
-            result: 'CUERDA'
-        },
-        {
-            id: 'red_pesca',
-            name: 'Red de Pesca',
-            cost: { 'CUERDA': 2, 'MADERA': 1 },
-            result: 'RED'
-        }
-    ],
-
-    // Verifica si hay materiales suficientes en el inventario
     canCraft(recipe) {
-        for (let item in recipe.cost) {
-            if (!Inventory.hasItem(item, recipe.cost[item])) {
-                return false;
-            }
+        for (let itemId in recipe.req) {
+            if (!Inventory.hasItem(itemId, recipe.req[itemId])) return false;
         }
         return true;
     },
 
-    // Ejecuta la fabricación
     craft(recipeId) {
-        const recipe = this.recipes.find(r => r.id === recipeId);
+        const recipe = RECIPES.find(r => r.id === recipeId);
         if (!recipe) return;
 
         if (this.canCraft(recipe)) {
-            // 1. Cobrar los materiales
-            for (let item in recipe.cost) {
-                Inventory.removeItem(item, recipe.cost[item]);
+            for (let itemId in recipe.req) {
+                Inventory.removeItem(itemId, recipe.req[itemId]);
             }
-            
-            // 2. Dar el resultado
-            Inventory.addItem({ name: recipe.result });
-            UI.addLog(`Has fabricado: ${recipe.name}`, true);
-            
-            // 3. Actualizar la ventana visualmente
+            Inventory.addItem(recipe.id, 1);
+            UI.addLog(`Fabricaste: ${recipe.name}`, true);
             this.renderMenu();
         } else {
-            UI.addLog("No tienes suficientes materiales.");
+            UI.addLog("Faltan materiales.");
         }
     },
 
-    // Dibuja la lista en el HTML
     renderMenu() {
         const list = document.getElementById('crafting-list');
         if (!list) return;
-        list.innerHTML = ''; // Limpiar lista vieja
+        list.innerHTML = ''; 
 
-        this.recipes.forEach(recipe => {
+        RECIPES.forEach(recipe => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'craft-item';
             
-            // Generar el texto de costo (Ej: "2 MADERA + 1 PLASTICO")
-            let costText = Object.entries(recipe.cost)
-                                 .map(([item, qty]) => `${qty} ${item}`)
+            // Genera el texto del coste sumando iconos y nombres
+            let costText = Object.entries(recipe.req)
+                                 .map(([id, qty]) => `${qty} ${ITEMS_DB[id].name}`)
                                  .join(' + ');
             
             const canCraft = this.canCraft(recipe);
             
-            // Inyectar el HTML de cada receta
             itemDiv.innerHTML = `
-                <div>
-                    <strong>${recipe.name}</strong><br>
-                    <span class="craft-cost">Costo: ${costText}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:30px; height:30px;">${ITEMS_DB[recipe.id].svg}</div>
+                    <div>
+                        <strong style="color:white;">${recipe.name}</strong><br>
+                        <span class="craft-cost" style="font-size:10px; color:#feca57;">${costText}</span>
+                    </div>
                 </div>
                 <button class="btn-craft" 
                         style="background: ${canCraft ? '#1dd1a1' : '#ff4757'}" 
                         onclick="Crafting.craft('${recipe.id}')">
-                    ${canCraft ? 'Fabricar' : 'Faltan Mat.'}
+                    ${canCraft ? 'Fabricar' : 'Faltan'}
                 </button>
             `;
             list.appendChild(itemDiv);
